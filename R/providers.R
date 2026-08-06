@@ -53,11 +53,13 @@ call_openai <- function(prompt, model, temperature = 0, timeout = 300, api_key =
 
   body <- list(
     model = model,
-    input = prompt,
+    messages = list(
+      list(role = "user", content = prompt)
+    ),
     temperature = temperature
   )
 
-  req <- httr2::request("https://api.openai.com/v1/responses") |>
+  req <- httr2::request("https://api.openai.com/v1/chat/completions") |>
     httr2::req_auth_bearer_token(api_key)
 
   if (nzchar(project_id)) {
@@ -70,6 +72,13 @@ call_openai <- function(prompt, model, temperature = 0, timeout = 300, api_key =
     httr2::req_perform()
 
   parsed <- httr2::resp_body_json(resp, simplifyVector = FALSE)
+
+  # Standard OpenAI Chat Completions response
+  if (!is.null(parsed$choices) && length(parsed$choices) > 0) {
+    return(parsed$choices[[1]]$message$content %||% "")
+  }
+
+  # Compatibility fallbacks for non-standard endpoints/proxies
   if (!is.null(parsed$output_text)) {
     return(parsed$output_text)
   }

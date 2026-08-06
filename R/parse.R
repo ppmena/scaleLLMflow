@@ -33,7 +33,10 @@ extract_ordered_items <- function(agent_outputs, items = 1:10) {
 
   if (length(item_blocks) > 0) {
     for (block in item_blocks) {
-      item_number <- sub("(?ims)^\\s*(?:[\\*-]\\s*)?Item\\s*(\\d{1,2})\\s*:.*$", "\\1", block, perl = TRUE)
+      # Robust extraction of item number using stringr::str_match
+      match_num <- stringr::str_match(block, "(?i)Item\\s*(\\d{1,2})")
+      item_number <- if (!is.na(match_num[1, 2])) match_num[1, 2] else ""
+
       if (item_number %in% names(ordered_items) && is.na(ordered_items[[item_number]])) {
         clean_block <- stringr::str_squish(block)
         clean_block <- sub(
