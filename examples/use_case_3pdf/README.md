@@ -15,7 +15,8 @@ library/scaleLLMflow/examples/use_case_3pdf/
 
 ## Requirements
 
-Run from the project root.
+The scripts resolve the article and output paths from their own location, so
+they can be run from the project root, this example folder, or RStudio.
 
 The library reads API keys from the environment:
 
