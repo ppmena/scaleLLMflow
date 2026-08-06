@@ -1,6 +1,12 @@
 # scaleLLMflow
 
-R library subproject for generalizing scale-based article assessment workflows with LLMs.
+`scaleLLMflow` is an R library for running prompt-defined scoring workflows over document collections with LLMs.
+
+For each document, the library extracts or reads the document text, resolves the best available prompt for the requested scale and model, sends that prompt plus the document content to the selected LLM provider, and parses the returned item scores. The questions, items, scoring rules, and output format are defined by the prompt itself. In other words, the library provides the reusable execution framework; each registered prompt defines what should be assessed and how the result should be formatted.
+
+The package includes a small set of already trained or validated scales as examples. The intended direction is community extension: users can contribute new scales, prompts, model-specific prompt variants, training metadata, and parsers where needed.
+
+Typical use cases include methodological quality scales, reporting checklists, risk-of-bias tools, coding schemes, and other structured document assessment tasks where each document must be scored across a defined set of items.
 
 The library organizes trained prompts by scale and model:
 
