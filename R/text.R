@@ -30,6 +30,8 @@ strip_references_section <- function(article_text) {
     if (length(heading_matches) > 0 && heading_matches[[1]] != -1) {
       late_matches <- heading_matches[heading_matches > floor(nchar(article_text) * 0.55)]
       if (length(late_matches) > 0) {
+        # Select the last matching header that is in the late section
+        # We slice from the start up to the start of that match
         stripped_text <- substr(article_text, 1, late_matches[[length(late_matches)]] - 1)
       }
     }
