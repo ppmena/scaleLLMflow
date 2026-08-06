@@ -1,21 +1,27 @@
 # Reproducible validation example: run the library and compare its predictions
 # with the theoretical item scores stored in ideal_results.csv.
-# Execute from the repository root:
+# The paths are resolved from this script's location, so it can be run from
+# any working directory (including this folder or RStudio).
 # Rscript "library/scaleLLMflow/examples/use_case_3pdf/run_and_compare_ideal.R"
+
+script_file <- sub("^--file=", "", commandArgs(trailingOnly = FALSE)[grep("^--file=", commandArgs(trailingOnly = FALSE))[1]])
+example_dir <- if (nzchar(script_file)) normalizePath(dirname(script_file), mustWork = TRUE) else getwd()
+library_dir <- normalizePath(file.path(example_dir, "..", ".."), mustWork = TRUE)
+project_root <- normalizePath(file.path(library_dir, "..", ".."), mustWork = TRUE)
 
 # Keep these settings aligned with the prompt and article set being evaluated.
 # Use a new output directory for each prompt/model experiment.
 scale_name <- "mqs"
 provider <- "gemini"
 model <- "gemini-2.5-flash"
-articles_dir <- file.path("library", "scaleLLMflow", "examples", "use_case_3pdf", "articles")
-ideal_path <- file.path("library", "scaleLLMflow", "examples", "use_case_3pdf", "ideal_results.csv")
-output_dir <- file.path("resultados", "use_case_3pdf_ideal_comparison")
+articles_dir <- file.path(example_dir, "articles")
+ideal_path <- file.path(example_dir, "ideal_results.csv")
+output_dir <- file.path(project_root, "resultados", "use_case_3pdf_ideal_comparison")
 item_cols <- paste0("Item_", 1:10)
 
 # Install the local package when running from a clean checkout.
 if (!requireNamespace("scaleLLMflow", quietly = TRUE)) {
-  install.packages(file.path("library", "scaleLLMflow"), repos = NULL, type = "source")
+  install.packages(library_dir, repos = NULL, type = "source")
 }
 # The key is read from the environment and is never stored in this example.
 if (!nzchar(Sys.getenv("GOOGLE_GEMINI_KEY", unset = "")) &&

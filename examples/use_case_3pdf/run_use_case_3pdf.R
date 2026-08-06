@@ -1,6 +1,12 @@
 # Reproducible example: run the MQS scale on three PDFs with Gemini 2.5 Flash.
-# Execute this script from the repository root so all relative paths resolve:
+# The paths below are resolved from this script's location, so it can be run
+# from the repository root, this folder, or an RStudio source session.
 # Rscript "library/scaleLLMflow/examples/use_case_3pdf/run_use_case_3pdf.R"
+
+script_file <- sub("^--file=", "", commandArgs(trailingOnly = FALSE)[grep("^--file=", commandArgs(trailingOnly = FALSE))][1])
+example_dir <- if (nzchar(script_file)) normalizePath(dirname(script_file), mustWork = TRUE) else getwd()
+library_dir <- normalizePath(file.path(example_dir, "..", ".."), mustWork = TRUE)
+project_root <- normalizePath(file.path(library_dir, "..", ".."), mustWork = TRUE)
 
 # --- USE CASE CONFIGURATION ---
 # Change these values to reuse the example with another registered scale,
@@ -9,8 +15,8 @@
 scale_name <- "mqs"
 provider <- "gemini"
 model <- "gemini-2.5-flash"
-articles_dir <- file.path("library", "scaleLLMflow", "examples", "use_case_3pdf", "articles")
-output_dir <- file.path("resultados", "use_case_3pdf_mqs")
+articles_dir <- file.path(example_dir, "articles")
+output_dir <- file.path(project_root, "resultados", "use_case_3pdf_mqs")
 filetype <- "pdf"
 strip_references <- TRUE
 max_articles <- 0
@@ -21,7 +27,7 @@ ensure_scale_llmflow <- function() {
     return(invisible(TRUE))
   }
 
-  package_dir <- file.path("library", "scaleLLMflow")
+  package_dir <- library_dir
   if (!dir.exists(package_dir)) {
     stop("scaleLLMflow is not installed and package directory was not found: ", package_dir, call. = FALSE)
   }
