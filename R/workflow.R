@@ -174,22 +174,32 @@ run_dataset <- function(articles_dir, scale = "mqs", provider = "gemini", model 
       break
     }
 
-    result <- run_article(
-      article_path = article_path,
-      scale = scale,
-      provider = provider,
-      model = model,
-      registry_dir = registry_dir,
-      filetype = filetype,
-      strip_references = strip_references,
-      items = items,
-      output_dir = output_dir,
-      temperature = temperature,
-      top_p = top_p,
-      timeout = timeout,
-      api_key = api_key,
-      project_id = project_id
-    )
+    result <- tryCatch({
+      run_article(
+        article_path = article_path,
+        scale = scale,
+        provider = provider,
+        model = model,
+        registry_dir = registry_dir,
+        filetype = filetype,
+        strip_references = strip_references,
+        items = items,
+        output_dir = output_dir,
+        temperature = temperature,
+        top_p = top_p,
+        timeout = timeout,
+        api_key = api_key,
+        project_id = project_id
+      )
+    }, error = function(e) {
+      warning("Error processing article '", basename(article_path), "': ", e$message, call. = FALSE)
+      NULL
+    })
+
+    if (is.null(result)) {
+      processed_pending <- processed_pending + 1
+      next
+    }
 
     record <- build_consensus_record(clean_id, basename(article_path), list(result$audit_log), items = items)
     if (!is.null(record)) {
