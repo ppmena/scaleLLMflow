@@ -3,6 +3,12 @@ clean_article_id <- function(path) {
     stringr::str_replace_all(" ", "_")
 }
 
+scale_default_items <- function(scale, items) {
+  if (!is.null(items)) return(items)
+  if (tolower(scale) == "pedro") return(1:11)
+  1:10
+}
+
 write_prompt_snapshot <- function(output_dir, prompt_text, resolved_prompt) {
   if (!dir.exists(output_dir)) {
     dir.create(output_dir, recursive = TRUE)
@@ -18,7 +24,7 @@ write_prompt_snapshot <- function(output_dir, prompt_text, resolved_prompt) {
     sep = "\n"
   )
 
-  writeLines(paste(header, prompt_text, sep = "\n\n"), file.path(output_dir, "prompt_usado.txt"), useBytes = TRUE)
+  writeLines(paste(header, prompt_text, sep = "\n\n"), file.path(output_dir, "prompt_used.md"), useBytes = TRUE)
 }
 
 build_audit_log <- function(clean_id, provider, model, strip_references, call_logs, calls_list,
@@ -58,7 +64,7 @@ build_audit_log <- function(clean_id, provider, model, strip_references, call_lo
 #' @param output_dir Optional output directory for an audit log.
 #' @export
 run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini", model = "gemini-2.5-flash",
-                        registry_dir = NULL, filetype = "auto", strip_references = TRUE, items = 1:10,
+                        registry_dir = NULL, filetype = "auto", strip_references = TRUE, items = NULL,
                         output_dir = NULL, temperature = 0, top_p = 0.1, timeout = 300,
                         api_key = NULL, project_id = NULL, pdf_path = NULL) {
   if (is.null(article_path)) {
@@ -67,6 +73,7 @@ run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini",
   if (is.null(article_path)) {
     stop("article_path is required.", call. = FALSE)
   }
+  items <- scale_default_items(scale, items)
 
   resolved <- resolve_prompt(scale, model, registry_dir = registry_dir)
   prompt_text <- paste(readLines(resolved$prompt_path, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
@@ -136,11 +143,12 @@ run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini",
 #' @export
 run_dataset <- function(articles_dir, scale = "mqs", provider = "gemini", model = "gemini-2.5-flash",
                         output_dir, registry_dir = NULL, filetype = "auto", strip_references = TRUE, max_articles = 0,
-                        items = 1:10, temperature = 0, top_p = 0.1, timeout = 300,
+                        items = NULL, temperature = 0, top_p = 0.1, timeout = 300,
                         api_key = NULL, project_id = NULL) {
   if (!dir.exists(articles_dir)) {
     stop("Articles directory not found: ", articles_dir, call. = FALSE)
   }
+  items <- scale_default_items(scale, items)
   filetype <- validate_filetype(filetype)
   if (max_articles < 0) {
     stop("max_articles must be 0 or higher.", call. = FALSE)
@@ -155,6 +163,7 @@ run_dataset <- function(articles_dir, scale = "mqs", provider = "gemini", model 
 
   article_paths <- list_article_files(articles_dir, filetype = filetype)
   results_list <- list()
+  errors_list <- list()
   processed_pending <- 0
 
   for (article_path in article_paths) {
@@ -174,7 +183,7 @@ run_dataset <- function(articles_dir, scale = "mqs", provider = "gemini", model 
       break
     }
 
-    result <- tryCatch({
+    result <- tryCatch(
       run_article(
         article_path = article_path,
         scale = scale,
@@ -190,22 +199,26 @@ run_dataset <- function(articles_dir, scale = "mqs", provider = "gemini", model 
         timeout = timeout,
         api_key = api_key,
         project_id = project_id
-      )
-    }, error = function(e) {
-      warning("Error processing article '", basename(article_path), "': ", e$message, call. = FALSE)
-      NULL
-    })
+      ),
+      error = function(e) {
+        message("Skipping ", basename(article_path), ": ", conditionMessage(e))
+        errors_list[[length(errors_list) + 1]] <<- data.frame(
+          ID = clean_id,
+          File = basename(article_path),
+          Error = conditionMessage(e),
+          stringsAsFactors = FALSE
+        )
+        NULL
+      }
+    )
 
-    if (is.null(result)) {
-      processed_pending <- processed_pending + 1
-      next
-    }
+    processed_pending <- processed_pending + 1
+    if (is.null(result)) next
 
     record <- build_consensus_record(clean_id, basename(article_path), list(result$audit_log), items = items)
     if (!is.null(record)) {
       results_list[[length(results_list) + 1]] <- record
     }
-    processed_pending <- processed_pending + 1
   }
 
   if (length(results_list) == 0) {
@@ -216,12 +229,21 @@ run_dataset <- function(articles_dir, scale = "mqs", provider = "gemini", model 
 
   csv_path <- file.path(output_dir, paste0(tolower(scale), "_Consensus_Report.csv"))
   utils::write.csv2(final_df, csv_path, row.names = FALSE)
+  errors_path <- file.path(output_dir, paste0(tolower(scale), "_Errors.csv"))
+  errors_df <- if (length(errors_list) == 0) {
+    data.frame(ID = character(), File = character(), Error = character(), stringsAsFactors = FALSE)
+  } else {
+    do.call(rbind, errors_list)
+  }
+  utils::write.csv2(errors_df, errors_path, row.names = FALSE)
 
   list(
     results = final_df,
     output_dir = output_dir,
     csv_path = csv_path,
     processed_pending_articles = processed_pending,
+    errors = errors_df,
+    errors_path = errors_path,
     resolved_prompt = resolved
   )
 }

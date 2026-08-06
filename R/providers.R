@@ -83,13 +83,23 @@ call_openai <- function(prompt, model, temperature = 0, timeout = 300, api_key =
     return(parsed$output_text)
   }
 
-  text <- unlist(lapply(parsed$output, function(output_item) {
+  # Also accept Chat Completions responses when a compatible endpoint or
+  # proxy returns the conventional choices/message/content shape.
+  if (!is.null(parsed$choices[[1]]$message$content)) {
+    return(parsed$choices[[1]]$message$content)
+  }
+
+  text <- unlist(lapply(parsed$output %||% list(), function(output_item) {
     unlist(lapply(output_item$content, function(content_item) {
       content_item$text %||% ""
     }))
   }))
 
-  paste(text[nzchar(text)], collapse = "\n")
+  result <- paste(text[nzchar(text)], collapse = "\n")
+  if (!nzchar(result)) {
+    stop("OpenAI response did not contain readable output text.", call. = FALSE)
+  }
+  result
 }
 
 `%||%` <- function(x, y) {

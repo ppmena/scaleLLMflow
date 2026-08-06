@@ -7,5 +7,5 @@
   "prompt_version": "v019",
   "status": "family_fallback",
   "accuracy": "123/160",
-  "notes": "Fallback de familia flash basado en el prompt consolidado v019."
+  "notes": "Flash-family fallback based on the consolidated v019 prompt."
 }
