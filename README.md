@@ -1,54 +1,54 @@
 # scaleLLMflow
 
-Subproyecto de libreria R para generalizar el flujo de evaluacion de escalas mediante LLMs.
+R library subproject for generalizing scale-based article assessment workflows with LLMs.
 
-La libreria organiza prompts entrenados por escala y modelo:
+The library organizes trained prompts by scale and model:
 
 ```text
 inst/scales/
   mqs/
     gemini-2.5-flash/
-      prompt.txt
+      prompt.md
       metadata.json
     gemini-flash/
-      prompt.txt
+      prompt.md
       metadata.json
     generic/
-      prompt.txt
+      prompt.md
       metadata.json
 ```
 
-Cada subcarpeta de modelo representa un prompt entrenado/validado con un dataset concreto. Si se pide un modelo sin prompt exacto, `resolve_prompt()` busca el prompt mas cercano:
+Each model folder represents a prompt trained or validated with a specific dataset. If a requested model has no exact prompt, `resolve_prompt()` searches for the closest available prompt:
 
-1. modelo exacto;
-2. misma familia textual, por ejemplo `flash`;
-3. coincidencia por version numerica;
-4. prompt `generic`;
-5. mayor similitud de nombre disponible.
+1. exact model;
+2. same textual family, for example `flash`;
+3. same numeric version;
+4. `generic` prompt;
+5. closest available folder name.
 
-Las claves API son siempre del usuario y se leen del entorno. No se guardan claves en la libreria.
+API keys always belong to the user and are read from the environment. No API keys are stored in the library.
 
-Variables esperadas:
+Expected variables:
 
-- `GEMINI_API_KEY` o `GOOGLE_GEMINI_KEY`
+- `GEMINI_API_KEY` or `GOOGLE_GEMINI_KEY`
 - `OPENAI_API_KEY`
-- `OPENAI_PROJECT_ID`, opcional
+- `OPENAI_PROJECT_ID`, optional
 
-## Instalacion local
+## Local Installation
 
-Desde la raiz del repo:
+From the repository root:
 
 ```powershell
 R CMD INSTALL "library/scaleLLMflow"
 ```
 
-O durante desarrollo:
+During development:
 
 ```r
 devtools::load_all("library/scaleLLMflow")
 ```
 
-## Uso basico
+## Basic Use
 
 ```r
 library(scaleLLMflow)
@@ -67,7 +67,7 @@ result <- run_article(
 result$scores
 ```
 
-Ejecutar un directorio completo:
+Run a full directory:
 
 ```r
 results <- run_dataset(
@@ -80,23 +80,23 @@ results <- run_dataset(
 )
 ```
 
-`filetype` puede ser `pdf`, `txt`, `md` o `auto`. Con `auto`, la libreria analiza todos los ficheros `.pdf`, `.txt` y `.md` de la carpeta.
+`filetype` can be `pdf`, `txt`, `md`, or `auto`. With `auto`, the library analyzes all `.pdf`, `.txt`, and `.md` files in the folder.
 
-## Anadir una escala nueva
+## Add a New Scale
 
-Crear:
+Create:
 
 ```text
-inst/scales/<nombre_escala>/<modelo>/prompt.txt
-inst/scales/<nombre_escala>/<modelo>/metadata.json
+inst/scales/<scale_name>/<model>/prompt.md
+inst/scales/<scale_name>/<model>/metadata.json
 ```
 
-El prompt debe incluir la definicion de la escala, reglas de puntuacion y formato de salida esperado. La libreria anade automaticamente el texto del articulo al final de la peticion.
+The prompt must include the scale definition, scoring rules, and expected output format. The library automatically appends the article text to the end of the request.
 
-## Politica de claves API
+## API Key Policy
 
-La libreria nunca incluye claves API. Cada usuario debe configurar sus credenciales en `.Renviron`, variables de entorno del sistema, RStudio, o pasar `api_key` en memoria durante una llamada concreta. Las variables leidas son:
+The library never includes API keys. Each user must configure credentials in `.Renviron`, system environment variables, RStudio, or pass `api_key` in memory for a specific call. The variables read by the library are:
 
-- Gemini: `GEMINI_API_KEY` o `GOOGLE_GEMINI_KEY`
+- Gemini: `GEMINI_API_KEY` or `GOOGLE_GEMINI_KEY`
 - OpenAI/ChatGPT: `OPENAI_API_KEY`
-- OpenAI project opcional: `OPENAI_PROJECT_ID`
+- Optional OpenAI project: `OPENAI_PROJECT_ID`

@@ -81,9 +81,9 @@ resolve_prompt <- function(scale, model, registry_dir = NULL) {
   }
 
   choose <- function(folder, strategy) {
-    prompt_path <- file.path(scale_dir, folder, "prompt.txt")
+    prompt_path <- file.path(scale_dir, folder, "prompt.md")
     if (!file.exists(prompt_path)) {
-      stop("Prompt folder exists but prompt.txt is missing: ", folder, call. = FALSE)
+      stop("Prompt folder exists but prompt.md is missing: ", folder, call. = FALSE)
     }
 
     list(

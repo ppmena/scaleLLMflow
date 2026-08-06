@@ -18,7 +18,7 @@ write_prompt_snapshot <- function(output_dir, prompt_text, resolved_prompt) {
     sep = "\n"
   )
 
-  writeLines(paste(header, prompt_text, sep = "\n\n"), file.path(output_dir, "prompt_usado.txt"), useBytes = TRUE)
+  writeLines(paste(header, prompt_text, sep = "\n\n"), file.path(output_dir, "prompt_used.md"), useBytes = TRUE)
 }
 
 build_audit_log <- function(clean_id, provider, model, strip_references, call_logs, calls_list,

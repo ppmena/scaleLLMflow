@@ -7,5 +7,5 @@
   "prompt_version": "v019",
   "status": "generic_fallback",
   "accuracy": "123/160",
-  "notes": "Fallback generico de MQS basado en el prompt consolidado v019."
+  "notes": "Generic MQS fallback based on the consolidated v019 prompt."
 }
