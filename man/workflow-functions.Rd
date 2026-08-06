@@ -25,12 +25,12 @@ run_llm(prompt, provider = "gemini", model = "gemini-2.5-flash",
   project_id = NULL)
 run_article(article_path = NULL, scale = "mqs", provider = "gemini",
   model = "gemini-2.5-flash", registry_dir = NULL, filetype = "auto",
-  strip_references = TRUE, items = 1:10, output_dir = NULL,
+  strip_references = TRUE, items = NULL, output_dir = NULL,
   temperature = 0, top_p = 0.1, timeout = 300, api_key = NULL,
   project_id = NULL, pdf_path = NULL)
 run_dataset(articles_dir, scale = "mqs", provider = "gemini",
   model = "gemini-2.5-flash", output_dir, registry_dir = NULL,
-  filetype = "auto", strip_references = TRUE, max_articles = 0, items = 1:10,
+  filetype = "auto", strip_references = TRUE, max_articles = 0, items = NULL,
   temperature = 0, top_p = 0.1, timeout = 300, api_key = NULL,
   project_id = NULL)
 }
