@@ -1,0 +1,11 @@
+{
+  "scale": "pedro",
+  "model": "gemini-2.5-flash",
+  "provider": "gemini",
+  "prompt_version": "v008",
+  "status": "registered",
+  "source_prompt": "Automatizar PEDro/prompts/v008/prompt_usado.md",
+  "items": 11,
+  "score_items": "2-11",
+  "notes": "PEDro v008 prompt; item 1 is reported but excluded from the official total."
+}
