@@ -1,8 +1,11 @@
-# Fixed use case: MQS scale on 3 PDFs with Gemini 2.5 Flash.
-# Run from the project root:
+# Reproducible example: run the MQS scale on three PDFs with Gemini 2.5 Flash.
+# Execute this script from the repository root so all relative paths resolve:
 # Rscript "library/scaleLLMflow/examples/use_case_3pdf/run_use_case_3pdf.R"
 
 # --- USE CASE CONFIGURATION ---
+# Change these values to reuse the example with another registered scale,
+# provider, model, article folder, or output folder. Keep each experiment in a
+# distinct output directory so previous audit logs are never overwritten.
 scale_name <- "mqs"
 provider <- "gemini"
 model <- "gemini-2.5-flash"
@@ -12,6 +15,7 @@ filetype <- "pdf"
 strip_references <- TRUE
 max_articles <- 0
 
+# Install the local package only when it is not already available to R.
 ensure_scale_llmflow <- function() {
   if (requireNamespace("scaleLLMflow", quietly = TRUE)) {
     return(invisible(TRUE))
@@ -25,6 +29,7 @@ ensure_scale_llmflow <- function() {
   install.packages(package_dir, repos = NULL, type = "source")
 }
 
+# Fail early with a clear message instead of starting a partial API run.
 ensure_api_key <- function(provider) {
   provider <- tolower(provider)
   if (provider == "chatgpt") {
@@ -49,6 +54,8 @@ ensure_api_key(provider)
 
 library(scaleLLMflow)
 
+# Check the input set before calling the provider. The library accepts PDF,
+# TXT, and Markdown files; this fixed example intentionally uses PDFs only.
 article_files <- list.files(articles_dir, pattern = "\\.pdf$", full.names = FALSE, ignore.case = TRUE)
 if (length(article_files) == 0) {
   stop("No PDF articles found in: ", articles_dir, call. = FALSE)
@@ -64,10 +71,13 @@ message("Filetype: ", filetype)
 message("Articles found: ", length(article_files))
 print(article_files)
 
+# Show which registered prompt will be selected for the requested model.
 resolved <- resolve_prompt(scale_name, model)
 message("Selected prompt model: ", resolved$selected_model)
 message("Prompt match strategy: ", resolved$strategy)
 
+# Run the complete directory. Existing sufficiently large audit logs are
+# reused by scaleLLMflow, which makes the example safe to resume.
 result <- run_dataset(
   articles_dir = articles_dir,
   scale = scale_name,
