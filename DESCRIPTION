@@ -1,0 +1,22 @@
+Package: scaleLLMflow
+Type: Package
+Title: General LLM Workflows for Scientific Quality Scales
+Version: 0.1.0
+Authors@R: c(
+    person("Proyecto MQS", role = c("aut", "cre"), email = "noreply@example.com")
+  )
+Author: Proyecto MQS
+Maintainer: Proyecto MQS <noreply@example.com>
+Description: Provides reusable functions to register prompts by scale and model,
+    resolve the best available prompt for a requested AI model, extract PDF text,
+    call user-configured LLM APIs, and parse scale item scores. The first bundled
+    scale is MQS with the consolidated v019 Gemini prompt.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Imports:
+    httr2,
+    jsonlite,
+    pdftools,
+    stringr
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2

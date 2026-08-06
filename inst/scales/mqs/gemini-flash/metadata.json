@@ -1,0 +1,11 @@
+{
+  "scale": "mqs",
+  "model": "gemini-flash",
+  "provider": "gemini",
+  "training_dataset": "data/pdf/training_set1",
+  "answer_key": "data/answers/respuestas_correctas_training_set1.csv",
+  "prompt_version": "v019",
+  "status": "family_fallback",
+  "accuracy": "123/160",
+  "notes": "Fallback de familia flash basado en el prompt consolidado v019."
+}
