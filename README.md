@@ -16,6 +16,10 @@ inst/scales/
     gemini-2.5-flash/
       prompt.md
       metadata.json
+  pedro/
+    gemini-2.5-flash/
+      prompt.md
+      metadata.json
     gemini-flash/
       prompt.md
       metadata.json
@@ -73,6 +77,19 @@ result <- run_article(
 result$scores
 ```
 
+PEDro v008 can be run with the same workflow. It defaults to all 11 items and
+parses the prompt's JSON `Yes`/`No` decisions into numeric item scores:
+
+```r
+result <- run_article(
+  article_path = "path/to/trial.pdf",
+  scale = "pedro",
+  provider = "gemini",
+  model = "gemini-2.5-flash",
+  filetype = "pdf"
+)
+```
+
 Run a full directory:
 
 ```r
@@ -88,7 +105,15 @@ results <- run_dataset(
 
 `filetype` can be `pdf`, `txt`, `md`, or `auto`. With `auto`, the library analyzes all `.pdf`, `.txt`, and `.md` files in the folder.
 
+If an article fails during a dataset run, the error is recorded in
+`<scale>_Errors.csv` and processing continues with the remaining articles.
+The consensus report is still written for successful articles.
+
 ## Add a New Scale
+
+For a complete, reusable implementation guide that can also be supplied as
+context to an LLM or coding agent, read
+[ADD_NEW_SCALE_SKILL.md](ADD_NEW_SCALE_SKILL.md).
 
 Create:
 
@@ -98,6 +123,18 @@ inst/scales/<scale_name>/<model>/metadata.json
 ```
 
 The prompt must include the scale definition, scoring rules, and expected output format. The library automatically appends the article text to the end of the request.
+
+## Tests
+
+The package includes `testthat` tests for prompt resolution, multiline item
+parsing, PEDro JSON parsing, and conservative reference removal. Run them from
+the repository root with:
+
+```powershell
+Rscript -e "testthat::test_dir('library/scaleLLMflow/tests/testthat')"
+```
+
+Do not commit `.Renviron` or any file containing real API keys.
 
 ## API Key Policy
 

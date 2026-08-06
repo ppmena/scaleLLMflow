@@ -53,13 +53,11 @@ call_openai <- function(prompt, model, temperature = 0, timeout = 300, api_key =
 
   body <- list(
     model = model,
-    messages = list(
-      list(role = "user", content = prompt)
-    ),
+    input = prompt,
     temperature = temperature
   )
 
-  req <- httr2::request("https://api.openai.com/v1/chat/completions") |>
+  req <- httr2::request("https://api.openai.com/v1/responses") |>
     httr2::req_auth_bearer_token(api_key)
 
   if (nzchar(project_id)) {
@@ -72,24 +70,27 @@ call_openai <- function(prompt, model, temperature = 0, timeout = 300, api_key =
     httr2::req_perform()
 
   parsed <- httr2::resp_body_json(resp, simplifyVector = FALSE)
-
-  # Standard OpenAI Chat Completions response
-  if (!is.null(parsed$choices) && length(parsed$choices) > 0) {
-    return(parsed$choices[[1]]$message$content %||% "")
-  }
-
-  # Compatibility fallbacks for non-standard endpoints/proxies
   if (!is.null(parsed$output_text)) {
     return(parsed$output_text)
   }
 
-  text <- unlist(lapply(parsed$output, function(output_item) {
+  # Also accept Chat Completions responses when a compatible endpoint or
+  # proxy returns the conventional choices/message/content shape.
+  if (!is.null(parsed$choices[[1]]$message$content)) {
+    return(parsed$choices[[1]]$message$content)
+  }
+
+  text <- unlist(lapply(parsed$output %||% list(), function(output_item) {
     unlist(lapply(output_item$content, function(content_item) {
       content_item$text %||% ""
     }))
   }))
 
-  paste(text[nzchar(text)], collapse = "\n")
+  result <- paste(text[nzchar(text)], collapse = "\n")
+  if (!nzchar(result)) {
+    stop("OpenAI response did not contain readable output text.", call. = FALSE)
+  }
+  result
 }
 
 `%||%` <- function(x, y) {

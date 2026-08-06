@@ -21,16 +21,15 @@ strip_references_section <- function(article_text) {
   }
 
   if (identical(stripped_text, article_text)) {
-    # Safer fallback that matches headings standing alone on their own line (optionally with numbers) in the last 45% of the text.
-    # Pattern: a newline, optional spaces, optional section number/letter and spaces, one of the keywords, optional spaces, and a newline or end of text.
-    pattern <- "(?im)\n\\s*(?:[0-9A-Z.-]+\\s+)?(?:references|bibliography|reference\\s+list|literature\\s+cited)\\s*(?:\n|$)"
-    heading_matches <- gregexpr(pattern, article_text, perl = TRUE)[[1]]
+    heading_matches <- gregexpr(
+      "(?im)^[ \\t]*(?:[0-9]+[.)]?[ \\t]*)?(references|bibliography|reference list|literature cited)[ \\t]*$",
+      article_text,
+      perl = TRUE
+    )[[1]]
 
     if (length(heading_matches) > 0 && heading_matches[[1]] != -1) {
       late_matches <- heading_matches[heading_matches > floor(nchar(article_text) * 0.55)]
       if (length(late_matches) > 0) {
-        # Select the last matching header that is in the late section
-        # We slice from the start up to the start of that match
         stripped_text <- substr(article_text, 1, late_matches[[length(late_matches)]] - 1)
       }
     }

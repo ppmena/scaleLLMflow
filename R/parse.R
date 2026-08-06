@@ -33,10 +33,8 @@ extract_ordered_items <- function(agent_outputs, items = 1:10) {
 
   if (length(item_blocks) > 0) {
     for (block in item_blocks) {
-      # Robust extraction of item number using stringr::str_match
-      match_num <- stringr::str_match(block, "(?i)Item\\s*(\\d{1,2})")
-      item_number <- if (!is.na(match_num[1, 2])) match_num[1, 2] else ""
-
+      item_match <- stringr::str_match(block, "(?i)Item\\s*(\\d{1,2})")[, 2]
+      item_number <- if (is.na(item_match)) "" else item_match
       if (item_number %in% names(ordered_items) && is.na(ordered_items[[item_number]])) {
         clean_block <- stringr::str_squish(block)
         clean_block <- sub(
@@ -66,6 +64,18 @@ get_item_score <- function(item_number, txt) {
   }
 
   txt <- gsub("\r\n?", "\n", paste(txt, collapse = "\n"))
+  if (grepl('"items"\\s*:', txt, perl = TRUE)) {
+    pedro_keys <- c("eligibility_criteria", "random_allocation", "concealed_allocation",
+      "baseline_comparability", "blind_subjects", "blind_therapists", "blind_assessors",
+      "adequate_follow_up", "intention_to_treat_analysis", "between_group_comparisons",
+      "point_estimates_and_variability")
+    json <- tryCatch(jsonlite::fromJSON(txt), error = function(e) NULL)
+    key <- pedro_keys[[as.integer(item_number)]]
+    if (!is.null(json) && !is.null(key) && !is.null(json$items[[key]])) {
+      decision <- tolower(trimws(as.character(json$items[[key]]$decision)))
+      if (decision %in% c("yes", "no")) return(ifelse(decision == "yes", 1, 0))
+    }
+  }
   item_pattern <- paste0(
     "(?ims)(?:^|\\n)\\s*(?:[\\*-]\\s*)?Item\\s*",
     item_number,
