@@ -53,6 +53,14 @@ test_that("audit logs retain the complete raw LLM response", {
   expect_match(repeated_log, "INDIVIDUAL ORDERED CALLS")
 })
 
+test_that("registry audit validates definitions and proposes duplicate unifications", {
+  audit <- audit_model_registry()
+  expect_true(all(audit$checks$Status %in% c("OK", "INFO", "WARNING")))
+  if (nrow(audit$unification_plan) > 0) {
+    expect_true(all(audit$unification_plan$Action == "proposed"))
+  }
+})
+
 testthat::test_that("prompt registry resolves scales and model fallbacks", {
   testthat::expect_true("mqs" %in% available_scales())
   testthat::expect_true("pedro" %in% available_scales())

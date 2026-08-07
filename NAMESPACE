@@ -1,5 +1,6 @@
 export(available_models)
 export(available_scales)
+export(audit_model_registry)
 export(build_scale_prompt)
 export(extract_article_text)
 export(extract_pdf_text)

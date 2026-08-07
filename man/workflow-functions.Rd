@@ -15,6 +15,8 @@
 available_scales(registry_dir = NULL)
 available_models(scale, registry_dir = NULL)
 resolve_prompt(scale, model, registry_dir = NULL)
+audit_model_registry(registry_dir = NULL, output_dir = NULL,
+  apply_unifications = FALSE)
 build_scale_prompt(prompt_text, article_text)
 extract_article_text(file_path, filetype = "auto", strip_references = TRUE)
 extract_pdf_text(pdf_path, strip_references = TRUE)
@@ -46,6 +48,10 @@ or dataset workflows.
 }
 \arguments{
 \item{registry_dir}{Optional prompt registry root. Defaults to bundled package prompts.}
+\item{output_dir}{Optional directory for registry audit and unification CSV reports.}
+\item{apply_unifications}{Whether to move exact duplicate prompt folders to a
+timestamped backup directory. Defaults to \code{FALSE}; proposed actions are
+reported without changing the registry.}
 \item{scale}{Scale name, for example \code{"mqs"}.}
 \item{model}{Requested model id.}
 \item{prompt_text}{Scale prompt text.}

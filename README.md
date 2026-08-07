@@ -31,6 +31,22 @@ inst/scales/
       metadata.json
 ```
 
+## Registry audit
+
+Use `audit_model_registry()` to verify every registered scale/model folder,
+metadata file, formal item definition, response schema, and prompt hash:
+
+```r
+audit <- audit_model_registry(output_dir = "results/registry_audit")
+audit$checks
+audit$unification_plan
+```
+
+Identical prompts are grouped by hash and a canonical model folder is proposed
+for each duplicate group. To apply those proposals, use
+`apply_unifications = TRUE`; redundant folders are moved to a timestamped
+backup directory and the applied actions are recorded in the audit reports.
+
 Each model folder represents a prompt trained or validated with a specific dataset. If a requested model has no exact prompt, `resolve_prompt()` searches for the closest available prompt:
 
 The bundled `gemini-2.5-flash` prompt folders are retained as legacy validated
