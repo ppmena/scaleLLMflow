@@ -2,6 +2,7 @@
 file_args <- commandArgs(trailingOnly = FALSE)
 file_arg <- file_args[startsWith(file_args, "--file=")]
 script_file <- if (length(file_arg) == 1) sub("^--file=", "", file_arg) else ""
+if (!nzchar(script_file) && requireNamespace("rstudioapi", quietly = TRUE)) script_file <- rstudioapi::getActiveDocumentContext()$path
 example_dir <- normalizePath(if (nzchar(script_file)) dirname(script_file) else getwd(), mustWork = TRUE)
 package_dir <- normalizePath(file.path(example_dir, "..", ".."), mustWork = TRUE)
 pkgload::load_all(package_dir, quiet = TRUE)
