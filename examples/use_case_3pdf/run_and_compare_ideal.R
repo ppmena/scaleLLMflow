@@ -13,7 +13,7 @@ project_root <- normalizePath(file.path(library_dir, "..", ".."), mustWork = TRU
 # Use a new output directory for each prompt/model experiment.
 scale_name <- "mqs"
 provider <- "gemini"
-model <- "gemini-2.5-flash"
+model <- "gemini-3.6-flash"
 articles_dir <- file.path(example_dir, "articles")
 ideal_path <- file.path(example_dir, "ideal_results.csv")
 output_dir <- file.path(project_root, "resultados", "use_case_3pdf_ideal_comparison")

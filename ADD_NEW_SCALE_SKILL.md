@@ -48,7 +48,7 @@ The `metadata.json` should record at least:
 ```json
 {
   "scale": "example",
-  "model": "gemini-2.5-flash",
+  "model": "gemini-3.6-flash",
   "provider": "gemini",
   "prompt_version": "v001",
   "status": "registered",
@@ -86,7 +86,7 @@ when a missing item invalidates the total, or `"ignore"` only when the scale's
 official scoring rules permit it. Use `included_in_total: false` for reported
 items such as PEDro item 1, which is coded but excluded from the official score.
 
-Never change the default model `gemini-2.5-flash` unless the task explicitly
+Never change the default model `gemini-3.6-flash` unless the task explicitly
 requires a different test. Never store API keys in the library.
 
 ## Parser and workflow contract
@@ -130,7 +130,7 @@ Then verify in R:
 library(scaleLLMflow)
 available_scales()
 available_models("example")
-resolve_prompt("example", "gemini-2.5-flash")
+resolve_prompt("example", "gemini-3.6-flash")
 ```
 
 Run at least one article with a distinct output directory and inspect:

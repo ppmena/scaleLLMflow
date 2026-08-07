@@ -107,14 +107,14 @@ build_audit_log <- function(clean_id, provider, model, strip_references, call_lo
 #' @param article_path Article path. Supported extensions are `.pdf`, `.txt`, and `.md`.
 #' @param scale Scale name. Defaults to `"mqs"`.
 #' @param provider LLM provider. Defaults to `"gemini"`.
-#' @param model Requested model. Defaults to `"gemini-2.5-flash"`.
+#' @param model Requested model. Defaults to `"gemini-3.6-flash"`.
 #' @param registry_dir Optional prompt registry root.
 #' @param filetype One of `"auto"`, `"pdf"`, `"txt"`, or `"md"`.
 #' @param strip_references Whether to remove references before the LLM call.
 #' @param items Item ids to parse. Defaults to 1:10.
 #' @param output_dir Optional output directory for an audit log.
 #' @export
-run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini", model = "gemini-2.5-flash",
+run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini", model = "gemini-3.6-flash",
                         registry_dir = NULL, filetype = "auto", strip_references = TRUE, items = NULL,
                         output_dir = NULL, temperature = 0, top_p = 0.1, timeout = 300,
                         api_key = NULL, project_id = NULL, pdf_path = NULL,
@@ -222,7 +222,7 @@ run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini",
 #' @param output_dir Directory where audit logs and CSV are written.
 #' @param max_articles Maximum pending PDFs to process. `0` means all.
 #' @export
-run_dataset <- function(articles_dir, scale = "mqs", provider = "gemini", model = "gemini-2.5-flash",
+run_dataset <- function(articles_dir, scale = "mqs", provider = "gemini", model = "gemini-3.6-flash",
                         output_dir, registry_dir = NULL, filetype = "auto", strip_references = TRUE, max_articles = 0,
                         items = NULL, temperature = 0, top_p = 0.1, timeout = 300,
                         api_key = NULL, project_id = NULL, max_retries = 3,

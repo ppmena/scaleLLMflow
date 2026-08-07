@@ -10,6 +10,7 @@ APIs, parse item scores, and write compatible audit logs.
 }
 \details{
 The first bundled scale is MQS with the consolidated v019 Gemini prompt under
-\code{inst/scales/mqs/gemini-2.5-flash}. API keys are always read from the
+\code{inst/scales/mqs/gemini-3.6-flash} by default, with family fallbacks for
+current Gemini Flash models. API keys are always read from the
 user environment and are never stored in the package.
 }

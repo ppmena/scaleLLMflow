@@ -30,7 +30,7 @@ The parameters are fixed inside `run_use_case_3pdf.R`:
 
 - scale: `mqs`
 - provider: `gemini`
-- model: `gemini-2.5-flash`
+- model: `gemini-3.6-flash`
 - file type: `pdf`
 - article folder: `library/scaleLLMflow/examples/use_case_3pdf/articles`
 - output folder: `resultados/use_case_3pdf_mqs`

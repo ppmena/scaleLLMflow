@@ -14,7 +14,7 @@ project_root <- normalizePath(file.path(library_dir, "..", ".."), mustWork = TRU
 # distinct output directory so previous audit logs are never overwritten.
 scale_name <- "mqs"
 provider <- "gemini"
-model <- "gemini-2.5-flash"
+model <- "gemini-3.6-flash"
 articles_dir <- file.path(example_dir, "articles")
 output_dir <- file.path(project_root, "resultados", "use_case_3pdf_mqs")
 filetype <- "pdf"

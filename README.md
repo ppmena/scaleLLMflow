@@ -30,6 +30,11 @@ inst/scales/
 
 Each model folder represents a prompt trained or validated with a specific dataset. If a requested model has no exact prompt, `resolve_prompt()` searches for the closest available prompt:
 
+The bundled `gemini-2.5-flash` prompt folders are retained as legacy validated
+prompt assets. The current default is `gemini-3.6-flash`; current Flash model
+requests use the registered Flash-family fallback until a model-specific
+validated prompt is added.
+
 1. exact model;
 2. same textual family, for example `flash`;
 3. same numeric version;
@@ -49,6 +54,11 @@ through `POST /v1beta/interactions`. The request uses `input`, the requested
 `model`, JSON response formatting, and `store: false` by default so article
 content is not retained as a stored Interaction. The response extractor reads
 text from `steps` of type `model_output`.
+
+The current Gemini model identifiers supported by this project are
+`gemini-3.6-flash` (default), `gemini-3.5-flash`, `gemini-3.5-flash-lite`, and
+`gemini-3.1-flash-lite`. The registered prompt resolver selects the closest
+validated `flash` prompt when an exact model-specific folder is not available.
 
 ## Local Installation
 
@@ -76,7 +86,7 @@ result <- run_article(
   article_path = "data/pdf/training_set1/2004 Miller.pdf",
   scale = "mqs",
   provider = "gemini",
-  model = "gemini-2.5-flash",
+  model = "gemini-3.6-flash",
   filetype = "pdf"
 )
 
@@ -117,7 +127,7 @@ result <- run_article(
   article_path = "path/to/trial.pdf",
   scale = "pedro",
   provider = "gemini",
-  model = "gemini-2.5-flash",
+       model = "gemini-3.6-flash",
   filetype = "pdf"
 )
 ```
@@ -129,7 +139,7 @@ results <- run_dataset(
   articles_dir = "data/pdf/training_set2",
   scale = "mqs",
   provider = "gemini",
-  model = "gemini-2.5-flash",
+  model = "gemini-3.6-flash",
   output_dir = "resultados/set2_library_run",
   filetype = "pdf"
 )

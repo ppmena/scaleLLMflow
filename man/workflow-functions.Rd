@@ -20,18 +20,18 @@ extract_article_text(file_path, filetype = "auto", strip_references = TRUE)
 extract_pdf_text(pdf_path, strip_references = TRUE)
 strip_references_section(article_text)
 parse_scale_scores(text, items = 1:10, metadata = NULL)
-run_llm(prompt, provider = "gemini", model = "gemini-2.5-flash",
+run_llm(prompt, provider = "gemini", model = "gemini-3.6-flash",
   temperature = 0, top_p = 0.1, timeout = 300, api_key = NULL,
   project_id = NULL, max_retries = 3, retry_wait_seconds = 1,
   retry_backoff = 2, rate_limit_seconds = 0)
 run_article(article_path = NULL, scale = "mqs", provider = "gemini",
-  model = "gemini-2.5-flash", registry_dir = NULL, filetype = "auto",
+  model = "gemini-3.6-flash", registry_dir = NULL, filetype = "auto",
   strip_references = TRUE, items = NULL, output_dir = NULL,
   temperature = 0, top_p = 0.1, timeout = 300, api_key = NULL,
   project_id = NULL, pdf_path = NULL, max_retries = 3,
   retry_wait_seconds = 1, retry_backoff = 2, rate_limit_seconds = 0)
 run_dataset(articles_dir, scale = "mqs", provider = "gemini",
-  model = "gemini-2.5-flash", output_dir, registry_dir = NULL,
+  model = "gemini-3.6-flash", output_dir, registry_dir = NULL,
   filetype = "auto", strip_references = TRUE, max_articles = 0, items = NULL,
   temperature = 0, top_p = 0.1, timeout = 300, api_key = NULL,
   project_id = NULL, max_retries = 3, retry_wait_seconds = 1,

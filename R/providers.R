@@ -184,7 +184,7 @@ call_openai <- function(prompt, model, temperature = 0, timeout = 300, api_key =
 #' @param retry_backoff Multiplicative exponential-backoff factor.
 #' @param rate_limit_seconds Minimum delay between requests in this R process.
 #' @export
-run_llm <- function(prompt, provider = "gemini", model = "gemini-2.5-flash",
+run_llm <- function(prompt, provider = "gemini", model = "gemini-3.6-flash",
                     temperature = 0, top_p = 0.1, timeout = 300,
                     api_key = NULL, project_id = NULL, max_retries = 3,
                     retry_wait_seconds = 1, retry_backoff = 2,

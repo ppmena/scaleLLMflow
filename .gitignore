@@ -3,3 +3,5 @@
 .Rproj.user/
 *.Rcheck/
 *.tar.gz
+.Renviron
+resultados/
