@@ -61,8 +61,8 @@ extract_pdf_text <- function(pdf_path, strip_references = TRUE) {
 #' @param file_path Path to a `.pdf`, `.txt`, or `.md` article file.
 #' @param filetype One of `"auto"`, `"pdf"`, `"txt"`, or `"md"`.
 #' @param strip_references Whether to remove the reference section before sending text to an LLM.
-#' @details Files are read from the local filesystem. PDF extraction reads the
-#' PDF text directly; this function does not convert PDFs to Markdown or TXT.
+#' @details Files are read from the local filesystem. PDF, TXT, and Markdown
+#' inputs are supported.
 #' @export
 extract_article_text <- function(file_path, filetype = "auto", strip_references = TRUE) {
   if (!file.exists(file_path)) {
