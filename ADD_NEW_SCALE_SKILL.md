@@ -9,6 +9,11 @@ produces an auditable result.
 
 ## Inputs to establish first
 
+All article inputs are local files. This package does not connect to Google
+Drive or any other cloud storage, and it does not convert PDFs into Markdown or
+TXT. If a conversion is needed, perform it with an external document tool and
+then pass the resulting local `.md` or `.txt` file to the workflow.
+
 Before editing files, identify:
 
 - the canonical scale name and its item numbering;

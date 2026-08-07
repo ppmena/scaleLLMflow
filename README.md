@@ -2,6 +2,10 @@
 
 `scaleLLMflow` is an R library for running prompt-defined scoring workflows over document collections with LLMs.
 
+The library works with local files only. It has no Google Drive, cloud-storage,
+or remote-file integration. PDF, TXT, and Markdown files must already exist on
+the local filesystem before the workflow starts.
+
 For each document, the library extracts or reads the document text, resolves the best available prompt for the requested scale and model, sends that prompt plus the document content to the selected LLM provider, and parses the returned item scores. The questions, items, scoring rules, and output format are defined by the prompt itself. In other words, the library provides the reusable execution framework; each registered prompt defines what should be assessed and how the result should be formatted.
 
 The package includes a small set of already trained or validated scales as examples. The intended direction is community extension: users can contribute new scales, prompts, model-specific prompt variants, training metadata, and parsers where needed.
@@ -145,7 +149,7 @@ results <- run_dataset(
 )
 ```
 
-`filetype` can be `pdf`, `txt`, `md`, or `auto`. With `auto`, the library analyzes all `.pdf`, `.txt`, and `.md` files in the folder.
+`filetype` can be `pdf`, `txt`, `md`, or `auto`. With `auto`, the library analyzes all `.pdf`, `.txt`, and `.md` files in the folder. PDF extraction only reads text from the PDF; the package does not convert PDF files to Markdown or TXT. Perform any conversion with an external tool before calling the library.
 
 If an article fails during a dataset run, the error is recorded in
 `<scale>_Errors.csv` and processing continues with the remaining articles.
