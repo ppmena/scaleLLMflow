@@ -67,7 +67,17 @@ parse_strict_json <- function(text) {
   if (is.null(text) || length(text) != 1 || !nzchar(trimws(text))) {
     stop("The LLM returned an empty response; expected one JSON document.", call. = FALSE)
   }
-  parsed <- tryCatch(jsonlite::fromJSON(text, simplifyVector = FALSE),
+  # Some providers still wrap structured output in a complete Markdown JSON
+  # fence despite response_format. Remove only a matching outer fence; any
+  # other extra text remains invalid and is rejected below.
+  normalized <- trimws(text)
+  if (grepl("^```(?:json)?\\s*", normalized, perl = TRUE, ignore.case = TRUE) &&
+      grepl("```\\s*$", normalized, perl = TRUE)) {
+    normalized <- sub("^```(?:json)?\\s*", "", normalized, perl = TRUE, ignore.case = TRUE)
+    normalized <- sub("```\\s*$", "", normalized, perl = TRUE)
+    normalized <- trimws(normalized)
+  }
+  parsed <- tryCatch(jsonlite::fromJSON(normalized, simplifyVector = FALSE),
     error = function(e) stop("The LLM response is not valid JSON: ", conditionMessage(e), call. = FALSE))
   if (!is.list(parsed)) {
     stop("The LLM response must be a JSON object.", call. = FALSE)

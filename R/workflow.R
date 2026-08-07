@@ -149,7 +149,8 @@ run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini",
     max_retries = max_retries,
     retry_wait_seconds = retry_wait_seconds,
     retry_backoff = retry_backoff,
-    rate_limit_seconds = rate_limit_seconds
+    rate_limit_seconds = rate_limit_seconds,
+    response_schema = resolved$metadata$response_schema
   )
 
   provenance <- build_provenance(

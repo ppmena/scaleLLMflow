@@ -60,6 +60,34 @@ is_retryable_error <- function(error) {
   is.na(status) || status %in% c(408, 409, 425, 429) || status >= 500
 }
 
+# Translate the compact registry contract into the JSON Schema expected by
+# Gemini Interactions structured output.
+build_gemini_json_schema <- function(response_schema) {
+  keys <- as.character(unlist(response_schema$required_item_keys, use.names = FALSE))
+  allowed <- as.character(unlist(response_schema$allowed_decisions, use.names = FALSE))
+  item_schema <- list(
+    type = "object",
+    properties = list(
+      decision = list(type = "string", enum = allowed),
+      evidence = list(type = "string"),
+      reason = list(type = "string")
+    ),
+    required = as.list(unlist(response_schema$required_item_fields, use.names = FALSE)),
+    additionalProperties = FALSE
+  )
+  list(
+    type = "object",
+    properties = list(items = list(
+      type = "object",
+      properties = setNames(rep(list(item_schema), length(keys)), keys),
+      required = as.list(keys),
+      additionalProperties = FALSE
+    )),
+    required = list("items"),
+    additionalProperties = FALSE
+  )
+}
+
 # Retry transient failures with capped exponential backoff. Client errors and
 # malformed successful responses are not retried.
 with_retries <- function(operation, provider, model, max_retries = 3,
@@ -82,7 +110,8 @@ with_retries <- function(operation, provider, model, max_retries = 3,
   }
 }
 
-call_gemini <- function(prompt, model, temperature = 0, top_p = 0.1, timeout = 300, api_key = NULL) {
+call_gemini <- function(prompt, model, temperature = 0, top_p = 0.1, timeout = 300,
+                        api_key = NULL, response_schema = NULL) {
   if (is.null(api_key) || !nzchar(api_key)) {
     api_key <- get_required_env(c("GEMINI_API_KEY", "GOOGLE_GEMINI_KEY"))
   }
@@ -91,11 +120,15 @@ call_gemini <- function(prompt, model, temperature = 0, top_p = 0.1, timeout = 3
   # sent in a header, avoiding credentials in URLs and request logs.
   endpoint <- "https://generativelanguage.googleapis.com/v1beta/interactions"
 
+  response_format <- list(type = "text", mime_type = "application/json")
+  if (!is.null(response_schema)) {
+    response_format$schema <- build_gemini_json_schema(response_schema)
+  }
   body <- list(
     model = model,
     input = prompt,
     store = FALSE,
-    response_format = list(type = "text", mime_type = "application/json"),
+    response_format = response_format,
     generation_config = list(temperature = temperature, top_p = top_p)
   )
 
@@ -110,7 +143,7 @@ call_gemini <- function(prompt, model, temperature = 0, top_p = 0.1, timeout = 3
   # model_output steps and fail clearly if no usable output is present.
   text <- unlist(lapply(parsed$steps %||% list(), function(step) {
     if (!identical(step$type, "model_output")) return(character(0))
-    vapply(step$content %||% list(), function(content) content$text %||% "", character(1))
+    unlist(lapply(step$content %||% list(), function(content) paste(content$text %||% "", collapse = "")), use.names = FALSE)
   }))
   result <- paste(text[nzchar(text)], collapse = "\n")
   if (!nzchar(result)) stop("Gemini Interaction completed without model output text.", call. = FALSE)
@@ -188,11 +221,11 @@ run_llm <- function(prompt, provider = "gemini", model = "gemini-3.6-flash",
                     temperature = 0, top_p = 0.1, timeout = 300,
                     api_key = NULL, project_id = NULL, max_retries = 3,
                     retry_wait_seconds = 1, retry_backoff = 2,
-                    rate_limit_seconds = 0) {
+                    rate_limit_seconds = 0, response_schema = NULL) {
   provider <- provider_alias(provider)
 
   if (provider == "gemini") {
-    return(with_retries(function() call_gemini(prompt, model, temperature, top_p, timeout, api_key),
+    return(with_retries(function() call_gemini(prompt, model, temperature, top_p, timeout, api_key, response_schema),
       provider, model, max_retries, retry_wait_seconds, retry_backoff, rate_limit_seconds))
   }
 

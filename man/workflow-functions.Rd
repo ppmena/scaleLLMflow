@@ -74,6 +74,9 @@ duration including retries.}
 \item{retry_wait_seconds}{Initial delay before a retry.}
 \item{retry_backoff}{Multiplicative backoff applied between retries.}
 \item{rate_limit_seconds}{Minimum delay between provider requests in this R process.}
+\item{response_schema}{Optional structured-output contract used to request a
+provider-specific JSON Schema. Normally supplied internally from the
+registered scale metadata.}
 \item{output_dir}{Directory where audit logs and CSV files are written.}
 \item{articles_dir}{Directory containing article files.}
 \item{max_articles}{Maximum pending article files to process. \code{0} means all.}

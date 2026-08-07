@@ -25,6 +25,15 @@ test_that("provenance contains stable hashes and execution metadata", {
   expect_true(!is.null(provenance$r_version))
 })
 
+test_that("Gemini structured output schema is generated from scale metadata", {
+  metadata <- scaleLLMflow:::resolve_prompt("mqs", "gemini-3.6-flash")$metadata
+  schema <- scaleLLMflow:::build_gemini_json_schema(metadata$response_schema)
+  expect_equal(schema$type, "object")
+  expect_equal(schema$properties$items$required, as.list(as.character(1:10)))
+  expect_equal(schema$properties$items$properties[["1"]]$properties$decision$enum,
+    c("0.0", "0.5", "1.0", "9.0"))
+})
+
 testthat::test_that("prompt registry resolves scales and model fallbacks", {
   testthat::expect_true("mqs" %in% available_scales())
   testthat::expect_true("pedro" %in% available_scales())
