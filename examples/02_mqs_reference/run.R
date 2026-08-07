@@ -1,9 +1,12 @@
 # Run MQS and compare with the local ideal reference scores.
-pkgload::load_all(".", quiet = TRUE)
+script_file <- sub("^--file=", "", commandArgs(FALSE)[grep("^--file=", commandArgs(FALSE))[1]])
+example_dir <- normalizePath(if (nzchar(script_file)) dirname(script_file) else getwd(), mustWork = TRUE)
+package_dir <- normalizePath(file.path(example_dir, "..", ".."), mustWork = TRUE)
+pkgload::load_all(package_dir, quiet = TRUE)
 run <- scaleLLMflow::run_dataset(
-  "examples/02_mqs_reference/articles", scale = "mqs", provider = "gemini",
-  model = "gemini-3.6-flash", output_dir = "examples/02_mqs_reference/results",
-  filetype = "pdf", reference_csv = "examples/02_mqs_reference/ideal_results.csv",
+  file.path(example_dir, "articles"), scale = "mqs", provider = "gemini",
+  model = "gemini-3.6-flash", output_dir = file.path(example_dir, "results"),
+  filetype = "pdf", reference_csv = file.path(example_dir, "ideal_results.csv"),
   validation_mode = "reference", temperature = 0
 )
 print(run$results)
