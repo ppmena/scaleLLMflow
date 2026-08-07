@@ -57,6 +57,35 @@ The `metadata.json` should record at least:
 }
 ```
 
+It must also declare the scientific scale contract separately from the prompt:
+
+```json
+{
+  "scale_definition": {
+    "items": {
+      "1": {
+        "label": "Eligibility criteria",
+        "allowed_values": [0.0, 1.0],
+        "included_in_total": false
+      }
+    },
+    "total": {
+      "method": "sum",
+      "items": ["2", "3"],
+      "na_policy": "fail"
+    }
+  }
+}
+```
+
+The definition is the authoritative scientific contract: every item must be
+listed, permitted values must be explicit, and the total must name exactly the
+items included in the official score. Prompt wording must describe the same
+rules but must not be the only place where they exist. Use `na_policy: "fail"`
+when a missing item invalidates the total, or `"ignore"` only when the scale's
+official scoring rules permit it. Use `included_in_total: false` for reported
+items such as PEDro item 1, which is coded but excluded from the official score.
+
 Never change the default model `gemini-2.5-flash` unless the task explicitly
 requires a different test. Never store API keys in the library.
 

@@ -86,7 +86,7 @@ resolve_prompt <- function(scale, model, registry_dir = NULL) {
       stop("Prompt folder exists but prompt.md is missing: ", folder, call. = FALSE)
     }
 
-    list(
+    result <- list(
       scale = scale_name,
       requested_model = model,
       selected_model = folder,
@@ -94,6 +94,8 @@ resolve_prompt <- function(scale, model, registry_dir = NULL) {
       prompt_path = normalizePath(prompt_path, winslash = "/", mustWork = TRUE),
       metadata = read_prompt_metadata(file.path(scale_dir, folder))
     )
+    validate_scale_definition(result$metadata)
+    result
   }
 
   exact_idx <- which(normalize_model_name(available) == requested)

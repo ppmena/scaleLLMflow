@@ -16,6 +16,7 @@ Encoding: UTF-8
 Imports:
     httr2,
     jsonlite,
+    openssl,
     pdftools,
     stringr
 Suggests:

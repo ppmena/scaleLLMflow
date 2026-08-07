@@ -95,10 +95,8 @@ GLOBAL RULE: Use explicit information from text, tables, figures, captions, and 
   - Score 0.0: No definition provided.
 
 
---- SINGLE CALL INSTRUCTIONS ---
-Evaluate ALL MQS Items 1 through 10 in one pass using the rubric above.
-Return exactly one line per item, in numeric order, with this format:
-* Item [X]: [Score] | Justification: [Evidence]
+--- STRICT JSON OUTPUT ---
+Return one valid JSON object only. Do not use Markdown fences or add any text outside the JSON object.
+Use the exact MQS JSON schema documented in the matching metadata.json: items 1 through 10, each with decision, evidence, and reason.
 Use only 0.0, 0.5, 1.0, or 9.0 where the rubric allows not applicable.
-Do not add summaries, markdown tables, headings, or conversational text.
 

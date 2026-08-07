@@ -95,10 +95,9 @@ GLOBAL RULE: Use explicit information from text, tables, figures, captions, and 
   - Score 0.0: No definition provided.
 
 
---- SINGLE CALL INSTRUCTIONS ---
-Evaluate ALL MQS Items 1 through 10 in one pass using the rubric above.
-Return exactly one line per item, in numeric order, with this format:
-* Item [X]: [Score] | Justification: [Evidence]
-Use only 0.0, 0.5, 1.0, or 9.0 where the rubric allows not applicable.
-Do not add summaries, markdown tables, headings, or conversational text.
+--- STRICT JSON OUTPUT ---
+Return one valid JSON object only. Do not use Markdown fences or add any text outside the JSON object.
+Use this exact structure, with every item present:
+{"items":{"1":{"decision":"0.0|0.5|1.0|9.0","evidence":"brief quote or paraphrase from the article","reason":"brief scoring reason"},"2":{"decision":"0.0|0.5|1.0|9.0","evidence":"...","reason":"..."},"3":{"decision":"0.0|0.5|1.0|9.0","evidence":"...","reason":"..."},"4":{"decision":"0.0|0.5|1.0|9.0","evidence":"...","reason":"..."},"5":{"decision":"0.0|0.5|1.0|9.0","evidence":"...","reason":"..."},"6":{"decision":"0.0|0.5|1.0|9.0","evidence":"...","reason":"..."},"7":{"decision":"0.0|0.5|1.0|9.0","evidence":"...","reason":"..."},"8":{"decision":"0.0|0.5|1.0|9.0","evidence":"...","reason":"..."},"9":{"decision":"0.0|0.5|1.0|9.0","evidence":"...","reason":"..."},"10":{"decision":"0.0|0.5|1.0|9.0","evidence":"...","reason":"..."}}}
+Use only 0.0, 0.5, 1.0, or 9.0 where the rubric allows not applicable. Use valid JSON strings and escape quotation marks inside evidence.
 

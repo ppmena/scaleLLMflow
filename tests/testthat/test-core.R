@@ -1,5 +1,30 @@
 library(scaleLLMflow)
 
+test_that("transient failures are retried and errors include context", {
+  attempts <- 0L
+  result <- scaleLLMflow:::with_retries(function() {
+    attempts <<- attempts + 1L
+    if (attempts < 3) stop("temporary network failure")
+    "ok"
+  }, "gemini", "test-model", max_retries = 2, retry_wait_seconds = 0)
+  expect_equal(result, "ok")
+  expect_equal(attempts, 3)
+  expect_error(scaleLLMflow:::with_retries(function() stop("bad request"),
+    "openai", "test-model", max_retries = 0), "provider=openai")
+})
+
+test_that("provenance contains stable hashes and execution metadata", {
+  expect_equal(nchar(scaleLLMflow:::sha256_text("hello")), 64)
+  metadata <- scaleLLMflow:::resolve_prompt("mqs", "gemini-2.5-flash")
+  provenance <- scaleLLMflow:::build_provenance(
+    tempfile(fileext = ".txt"), "article text", "prompt", "prompt article",
+    metadata, "gemini", "gemini-2.5-flash", 0, 0.1, 300, TRUE, 3, 1, 2, 0
+  )
+  expect_true(grepl("^[0-9a-f]{64}$", provenance$article_text_sha256))
+  expect_equal(provenance$request_characters, nchar("prompt article"))
+  expect_true(!is.null(provenance$r_version))
+})
+
 testthat::test_that("prompt registry resolves scales and model fallbacks", {
   testthat::expect_true("mqs" %in% available_scales())
   testthat::expect_true("pedro" %in% available_scales())

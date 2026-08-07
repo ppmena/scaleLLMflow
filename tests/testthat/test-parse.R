@@ -54,3 +54,17 @@ test_that("resolve_prompt resolves exact and family fallbacks", {
   expect_equal(resolved_fallback$scale, "mqs")
   expect_equal(resolved_fallback$strategy, "family:flash")
 })
+
+test_that("registered JSON responses are validated and converted", {
+  metadata <- scaleLLMflow:::read_prompt_metadata(
+    system.file("scales/pedro/gemini-2.5-flash", package = "scaleLLMflow")
+  )
+  item <- function(decision) list(decision = decision, evidence = "reported", reason = "criterion")
+  response <- list(items = setNames(lapply(c("No", rep("Yes", 10)), item),
+    unlist(metadata$response_schema$required_item_keys)))
+  text <- jsonlite::toJSON(response, auto_unbox = TRUE)
+  expect_equal(unname(parse_scale_scores(text, 1:11, metadata)[1]), 0)
+  expect_equal(unname(parse_scale_scores(text, 1:11, metadata)[2]), 1)
+  expect_error(parse_scale_scores(sub("Yes", "Maybe", text, fixed = TRUE), 1:11, metadata),
+    "Invalid decision")
+})

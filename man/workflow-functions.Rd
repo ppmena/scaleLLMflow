@@ -19,20 +19,23 @@ build_scale_prompt(prompt_text, article_text)
 extract_article_text(file_path, filetype = "auto", strip_references = TRUE)
 extract_pdf_text(pdf_path, strip_references = TRUE)
 strip_references_section(article_text)
-parse_scale_scores(text, items = 1:10)
+parse_scale_scores(text, items = 1:10, metadata = NULL)
 run_llm(prompt, provider = "gemini", model = "gemini-2.5-flash",
   temperature = 0, top_p = 0.1, timeout = 300, api_key = NULL,
-  project_id = NULL)
+  project_id = NULL, max_retries = 3, retry_wait_seconds = 1,
+  retry_backoff = 2, rate_limit_seconds = 0)
 run_article(article_path = NULL, scale = "mqs", provider = "gemini",
   model = "gemini-2.5-flash", registry_dir = NULL, filetype = "auto",
   strip_references = TRUE, items = NULL, output_dir = NULL,
   temperature = 0, top_p = 0.1, timeout = 300, api_key = NULL,
-  project_id = NULL, pdf_path = NULL)
+  project_id = NULL, pdf_path = NULL, max_retries = 3,
+  retry_wait_seconds = 1, retry_backoff = 2, rate_limit_seconds = 0)
 run_dataset(articles_dir, scale = "mqs", provider = "gemini",
   model = "gemini-2.5-flash", output_dir, registry_dir = NULL,
   filetype = "auto", strip_references = TRUE, max_articles = 0, items = NULL,
   temperature = 0, top_p = 0.1, timeout = 300, api_key = NULL,
-  project_id = NULL)
+  project_id = NULL, max_retries = 3, retry_wait_seconds = 1,
+  retry_backoff = 2, rate_limit_seconds = 0)
 }
 \description{
 Public helpers for resolving trained scale prompts, extracting PDF text, calling
@@ -52,13 +55,25 @@ or dataset workflows.
 \item{strip_references}{Whether to remove the reference section before sending text to the LLM.}
 \item{text}{LLM response text.}
 \item{items}{Numeric item ids to parse.}
+\item{metadata}{Optional resolved prompt metadata. When it contains a strict
+JSON response schema, the response is validated before scores are returned.}
 \item{prompt}{Prompt text to send to the LLM provider.}
 \item{provider}{Provider id: \code{"gemini"}, \code{"openai"}, or \code{"chatgpt"}.}
-\item{temperature}{Sampling temperature.}
-\item{top_p}{Gemini topP value.}
-\item{timeout}{Request timeout in seconds.}
+\item{temperature}{Sampling temperature. Lower values make responses more
+deterministic; \code{0} is the default and is recommended for reproducible
+scientific scoring. It is sent to both supported providers.}
+\item{top_p}{Gemini nucleus-sampling parameter. The default is \code{0.1}.
+Lower values restrict the candidate token distribution. This parameter is
+used by Gemini and is currently ignored by the OpenAI integration.}
+\item{timeout}{Maximum provider request duration in seconds. The default is
+\code{300}. This is the timeout for each individual attempt, not the total
+duration including retries.}
 \item{api_key}{Optional API key supplied in memory. Defaults to environment variables.}
 \item{project_id}{Optional OpenAI project id. Defaults to \code{OPENAI_PROJECT_ID}.}
+\item{max_retries}{Maximum number of retries for transient provider failures.}
+\item{retry_wait_seconds}{Initial delay before a retry.}
+\item{retry_backoff}{Multiplicative backoff applied between retries.}
+\item{rate_limit_seconds}{Minimum delay between provider requests in this R process.}
 \item{output_dir}{Directory where audit logs and CSV files are written.}
 \item{articles_dir}{Directory containing article files.}
 \item{max_articles}{Maximum pending article files to process. \code{0} means all.}

@@ -44,6 +44,12 @@ Expected variables:
 - `OPENAI_API_KEY`
 - `OPENAI_PROJECT_ID`, optional
 
+Gemini requests use the [Gemini Interactions API](https://ai.google.dev/gemini-api/docs/interactions-overview?hl=en)
+through `POST /v1beta/interactions`. The request uses `input`, the requested
+`model`, JSON response formatting, and `store: false` by default so article
+content is not retained as a stored Interaction. The response extractor reads
+text from `steps` of type `model_output`.
+
 ## Local Installation
 
 From the repository root:
@@ -77,6 +83,32 @@ result <- run_article(
 result$scores
 ```
 
+### Generation and execution parameters
+
+The generation parameters are selected when launching `run_article()`,
+`run_dataset()`, or `run_llm()`:
+
+```r
+result <- run_article(
+  article_path = "path/to/trial.pdf",
+  temperature = 0,
+  top_p = 0.1,
+  timeout = 300
+)
+```
+
+`temperature` controls response variability. Its default is `0`, which is
+recommended for reproducible scientific scoring. `top_p` controls nucleus
+sampling in Gemini and defaults to `0.1`; it is currently ignored by the
+OpenAI integration. `timeout` is the maximum duration of each individual API
+attempt in seconds, not the total duration when retries are enabled.
+
+The resilience parameters are configured in the same call: `max_retries`
+(default `3`), `retry_wait_seconds` (default `1`), `retry_backoff` (default
+`2`), and `rate_limit_seconds` (default `0`). Retry delays are added on top of
+the per-attempt timeout and rate limiting applies between requests made by the
+same R process.
+
 PEDro v008 can be run with the same workflow. It defaults to all 11 items and
 parses the prompt's JSON `Yes`/`No` decisions into numeric item scores:
 
@@ -109,6 +141,36 @@ If an article fails during a dataset run, the error is recorded in
 `<scale>_Errors.csv` and processing continues with the remaining articles.
 The consensus report is still written for successful articles.
 
+Provider calls use bounded resilience defaults: up to three retries for network
+errors, timeouts, HTTP 408/409/425/429, and HTTP 5xx responses; exponential
+backoff starting at one second; and no rate-limit delay by default. Configure
+these options when needed:
+
+```r
+result <- run_article(
+  article_path = "path/to/trial.pdf",
+  max_retries = 5,
+  retry_wait_seconds = 2,
+  retry_backoff = 2,
+  rate_limit_seconds = 1
+)
+```
+
+Client errors such as invalid authentication or malformed requests are not
+retried. Final errors include the provider, model, attempt number, HTTP status
+when available, and a truncated response body. Credentials are never included
+in error messages.
+
+### Reproducibility metadata
+
+Each article result and audit log records the UTC timestamp, package and R
+versions, requested and selected prompt models, provider, generation settings,
+retry/rate-limit settings, input sizes, and SHA-256 hashes for the extracted
+article text, prompt, complete request, and raw response. The original article
+path and file size are also recorded. These fields make it possible to detect
+whether a later result used different source text, prompt content, or runtime
+parameters.
+
 ## Add a New Scale
 
 For a complete, reusable implementation guide that can also be supplied as
@@ -124,14 +186,34 @@ inst/scales/<scale_name>/<model>/metadata.json
 
 The prompt must include the scale definition, scoring rules, and expected output format. The library automatically appends the article text to the end of the request.
 
+### Response contract
+
+Registered scales use a strict JSON response contract declared in their
+`metadata.json`. Every required item must be present and must contain the
+scale-specific decision plus `evidence` and `reason` strings. Invalid JSON,
+missing items, unexpected decisions, Markdown fences, and extra text are
+rejected before scoring. This fail-closed behavior prevents malformed output
+from silently becoming missing or incorrect scores.
+
+When adding a scale, define `response_schema` in the metadata and describe the
+same schema in the prompt. Keep the raw response in audit outputs and make the
+numeric encoding explicit in the parser when decisions are not numeric.
+
+The scientific definition is a separate `scale_definition` object in the same
+metadata file. It is authoritative for item existence, permitted values, total
+membership, missing-value policy, and total calculation. The prompt is the
+operational instruction for the LLM; it must agree with this definition but is
+not used as the source of scoring rules. Results expose `total_score`, and
+dataset reports include `Total_Score` calculated from the formal definition.
+
 ## Tests
 
-The package includes `testthat` tests for prompt resolution, multiline item
-parsing, PEDro JSON parsing, and conservative reference removal. Run them from
-the repository root with:
+The package includes `testthat` tests for prompt resolution, strict JSON schema
+validation, multiline item parsing, PEDro JSON parsing, and conservative
+reference removal. Run them from the package directory with:
 
 ```powershell
-Rscript -e "testthat::test_dir('library/scaleLLMflow/tests/testthat')"
+Rscript -e "testthat::test_dir('tests/testthat')"
 ```
 
 Do not commit `.Renviron` or any file containing real API keys.

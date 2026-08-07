@@ -3,6 +3,55 @@ clean_article_id <- function(path) {
     stringr::str_replace_all(" ", "_")
 }
 
+# Return a stable SHA-256 digest for text. Hashes tie an audit result to the
+# exact inputs that produced it.
+sha256_text <- function(text) {
+  as.character(openssl::sha256(charToRaw(enc2utf8(text))))
+}
+
+build_provenance <- function(article_path, article_text, prompt_text, full_prompt,
+                             resolved, provider, model, temperature, top_p,
+                             timeout, strip_references, max_retries,
+                             retry_wait_seconds, retry_backoff, rate_limit_seconds) {
+  package_version <- tryCatch(as.character(utils::packageVersion("scaleLLMflow")),
+    error = function(e) "development")
+  list(
+    created_at_utc = format(Sys.time(), tz = "UTC", usetz = TRUE),
+    package_version = package_version,
+    r_version = as.character(getRversion()),
+    platform = R.version$platform,
+    article_path = normalizePath(article_path, winslash = "/", mustWork = FALSE),
+    article_file_bytes = if (file.exists(article_path)) as.numeric(file.info(article_path)$size) else NA_real_,
+    article_text_characters = nchar(article_text),
+    article_text_bytes = nchar(article_text, type = "bytes"),
+    prompt_characters = nchar(prompt_text),
+    prompt_bytes = nchar(prompt_text, type = "bytes"),
+    request_characters = nchar(full_prompt),
+    request_bytes = nchar(full_prompt, type = "bytes"),
+    article_text_sha256 = sha256_text(article_text),
+    prompt_sha256 = sha256_text(prompt_text),
+    request_sha256 = sha256_text(full_prompt),
+    requested_model = model,
+    selected_prompt_model = resolved$selected_model,
+    prompt_match_strategy = resolved$strategy,
+    prompt_source = resolved$prompt_path,
+    provider = provider_alias(provider),
+    temperature = temperature,
+    top_p = top_p,
+    timeout_seconds = timeout,
+    strip_references = isTRUE(strip_references),
+    max_retries = max_retries,
+    retry_wait_seconds = retry_wait_seconds,
+    retry_backoff = retry_backoff,
+    rate_limit_seconds = rate_limit_seconds
+  )
+}
+
+format_provenance <- function(provenance) {
+  paste(c("--- REPRODUCIBILITY METADATA ---",
+    vapply(names(provenance), function(key) paste0(key, ": ", provenance[[key]]), character(1))), collapse = "\n")
+}
+
 scale_default_items <- function(scale, items) {
   if (!is.null(items)) return(items)
   if (tolower(scale) == "pedro") return(1:11)
@@ -28,7 +77,8 @@ write_prompt_snapshot <- function(output_dir, prompt_text, resolved_prompt) {
 }
 
 build_audit_log <- function(clean_id, provider, model, strip_references, call_logs, calls_list,
-                            scale = "mqs", calls_per_article = 1, items = 1:10) {
+                            scale = "mqs", calls_per_article = 1, items = 1:10,
+                            provenance = NULL) {
   consensus_ordered_log <- build_consensus_ordered_log(calls_list, items = items)
   score_header <- if (tolower(scale) == "mqs") {
     "--- MQS CONSENSUS SCORES USED FOR EXCEL ---"
@@ -42,6 +92,7 @@ build_audit_log <- function(clean_id, provider, model, strip_references, call_lo
     paste0("MODEL: ", model),
     paste0("STRIP_REFERENCES: ", as.integer(isTRUE(strip_references))),
     paste0("CALLS_PER_ARTICLE: ", calls_per_article),
+    if (!is.null(provenance)) format_provenance(provenance),
     score_header,
     consensus_ordered_log,
     "--- INDIVIDUAL ORDERED CALLS ---",
@@ -66,7 +117,9 @@ build_audit_log <- function(clean_id, provider, model, strip_references, call_lo
 run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini", model = "gemini-2.5-flash",
                         registry_dir = NULL, filetype = "auto", strip_references = TRUE, items = NULL,
                         output_dir = NULL, temperature = 0, top_p = 0.1, timeout = 300,
-                        api_key = NULL, project_id = NULL, pdf_path = NULL) {
+                        api_key = NULL, project_id = NULL, pdf_path = NULL,
+                        max_retries = 3, retry_wait_seconds = 1, retry_backoff = 2,
+                        rate_limit_seconds = 0) {
   if (is.null(article_path)) {
     article_path <- pdf_path
   }
@@ -92,10 +145,34 @@ run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini",
     top_p = top_p,
     timeout = timeout,
     api_key = api_key,
-    project_id = project_id
+    project_id = project_id,
+    max_retries = max_retries,
+    retry_wait_seconds = retry_wait_seconds,
+    retry_backoff = retry_backoff,
+    rate_limit_seconds = rate_limit_seconds
   )
 
-  ordered_items <- paste(extract_ordered_items(list(raw_response), items = items), collapse = "\n\n")
+  provenance <- build_provenance(
+    article_path, article_text, prompt_text, full_prompt, resolved, provider,
+    model, temperature, top_p, timeout, strip_references, max_retries,
+    retry_wait_seconds, retry_backoff, rate_limit_seconds
+  )
+  provenance$response_characters <- nchar(raw_response)
+  provenance$response_bytes <- nchar(raw_response, type = "bytes")
+  provenance$response_sha256 <- sha256_text(raw_response)
+
+  # Validate before parsing so malformed model output fails loudly and is
+  # recorded by run_dataset instead of producing incomplete scores.
+  validate_scale_response(raw_response, resolved$metadata, items)
+
+  ordered_items <- if (!is.null(resolved$metadata$response_schema) &&
+                       !identical(resolved$metadata$response_schema$type, "legacy_lines")) {
+    scores <- parse_scale_scores(raw_response, items = items, metadata = resolved$metadata)
+    validate_scale_scores(scores, items, resolved$metadata)
+    paste(vapply(items, function(i) paste0("* Item ", i, ": ", format_scale_score(scores[[paste0("Item_", i)]])), character(1)), collapse = "\n\n")
+  } else {
+    paste(extract_ordered_items(list(raw_response), items = items), collapse = "\n\n")
+  }
   calls_list <- c(ordered_items)
   call_logs <- c(paste("--- ORDERED CALL 1 OF 1 ---", ordered_items, sep = "\n\n"))
   clean_id <- clean_article_id(article_path)
@@ -107,7 +184,8 @@ run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini",
     call_logs = call_logs,
     calls_list = calls_list,
     scale = scale,
-    items = items
+    items = items,
+    provenance = provenance
   )
 
   if (!is.null(output_dir)) {
@@ -126,9 +204,12 @@ run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini",
     provider = provider_alias(provider),
     model = model,
     resolved_prompt = resolved,
-    scores = parse_scale_scores(ordered_items, items = items),
+    scores = parse_scale_scores(raw_response, items = items, metadata = resolved$metadata),
+    total_score = calculate_scale_total(parse_scale_scores(raw_response, items = items, metadata = resolved$metadata), resolved$metadata),
+    score_definition = resolved$metadata$scale_definition$total,
     audit_log = audit_log,
-    raw_response = raw_response
+    raw_response = raw_response,
+    provenance = provenance
   )
 }
 
@@ -144,7 +225,9 @@ run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini",
 run_dataset <- function(articles_dir, scale = "mqs", provider = "gemini", model = "gemini-2.5-flash",
                         output_dir, registry_dir = NULL, filetype = "auto", strip_references = TRUE, max_articles = 0,
                         items = NULL, temperature = 0, top_p = 0.1, timeout = 300,
-                        api_key = NULL, project_id = NULL) {
+                        api_key = NULL, project_id = NULL, max_retries = 3,
+                        retry_wait_seconds = 1, retry_backoff = 2,
+                        rate_limit_seconds = 0) {
   if (!dir.exists(articles_dir)) {
     stop("Articles directory not found: ", articles_dir, call. = FALSE)
   }
@@ -172,7 +255,7 @@ run_dataset <- function(articles_dir, scale = "mqs", provider = "gemini", model 
 
     if (file.exists(audit_full_path) && file.info(audit_full_path)$size > 100) {
       existing_log <- paste(readLines(audit_full_path, warn = FALSE), collapse = "\n")
-      existing_record <- build_consensus_record(clean_id, basename(article_path), list(existing_log), items = items)
+        existing_record <- build_consensus_record(clean_id, basename(article_path), list(existing_log), items = items, metadata = resolved$metadata)
       if (!is.null(existing_record)) {
         results_list[[length(results_list) + 1]] <- existing_record
       }
@@ -198,7 +281,11 @@ run_dataset <- function(articles_dir, scale = "mqs", provider = "gemini", model 
         top_p = top_p,
         timeout = timeout,
         api_key = api_key,
-        project_id = project_id
+        project_id = project_id,
+        max_retries = max_retries,
+        retry_wait_seconds = retry_wait_seconds,
+        retry_backoff = retry_backoff,
+        rate_limit_seconds = rate_limit_seconds
       ),
       error = function(e) {
         message("Skipping ", basename(article_path), ": ", conditionMessage(e))
@@ -215,7 +302,7 @@ run_dataset <- function(articles_dir, scale = "mqs", provider = "gemini", model 
     processed_pending <- processed_pending + 1
     if (is.null(result)) next
 
-    record <- build_consensus_record(clean_id, basename(article_path), list(result$audit_log), items = items)
+    record <- build_consensus_record(clean_id, basename(article_path), list(result$audit_log), items = items, metadata = resolved$metadata)
     if (!is.null(record)) {
       results_list[[length(results_list) + 1]] <- record
     }
