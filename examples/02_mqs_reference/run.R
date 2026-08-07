@@ -1,5 +1,7 @@
 # Run MQS and compare with the local ideal reference scores.
-script_file <- sub("^--file=", "", commandArgs(FALSE)[grep("^--file=", commandArgs(FALSE))[1]])
+file_args <- commandArgs(trailingOnly = FALSE)
+file_arg <- file_args[startsWith(file_args, "--file=")]
+script_file <- if (length(file_arg) == 1) sub("^--file=", "", file_arg) else ""
 example_dir <- normalizePath(if (nzchar(script_file)) dirname(script_file) else getwd(), mustWork = TRUE)
 package_dir <- normalizePath(file.path(example_dir, "..", ".."), mustWork = TRUE)
 pkgload::load_all(package_dir, quiet = TRUE)
