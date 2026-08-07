@@ -29,13 +29,15 @@ run_article(article_path = NULL, scale = "mqs", provider = "gemini",
   strip_references = TRUE, items = NULL, output_dir = NULL,
   temperature = 0, top_p = 0.1, timeout = 300, api_key = NULL,
   project_id = NULL, pdf_path = NULL, max_retries = 3,
-  retry_wait_seconds = 1, retry_backoff = 2, rate_limit_seconds = 0)
+  retry_wait_seconds = 1, retry_backoff = 2, rate_limit_seconds = 0,
+  reference_scores = NULL, validation_mode = c("free", "reference"))
 run_dataset(articles_dir, scale = "mqs", provider = "gemini",
   model = "gemini-3.6-flash", output_dir, registry_dir = NULL,
   filetype = "auto", strip_references = TRUE, max_articles = 0, items = NULL,
   temperature = 0, top_p = 0.1, timeout = 300, api_key = NULL,
   project_id = NULL, max_retries = 3, retry_wait_seconds = 1,
-  retry_backoff = 2, rate_limit_seconds = 0)
+  retry_backoff = 2, rate_limit_seconds = 0, reference_csv = NULL,
+  validation_mode = c("free", "reference"))
 }
 \description{
 Public helpers for resolving trained scale prompts, extracting PDF text, calling
@@ -74,6 +76,13 @@ duration including retries.}
 \item{retry_wait_seconds}{Initial delay before a retry.}
 \item{retry_backoff}{Multiplicative backoff applied between retries.}
 \item{rate_limit_seconds}{Minimum delay between provider requests in this R process.}
+\item{reference_scores}{Named numeric reference vector for one article, with
+names such as \code{Item_1}. Supplying it activates reference mode.}
+\item{reference_csv}{Semicolon-separated CSV containing \code{ID} and item
+columns for dataset validation.}
+\item{validation_mode}{Either \code{"free"} to preserve and inspect the LLM
+response without a reference, or \code{"reference"} to compare it with
+previously reviewed scores.}
 \item{response_schema}{Optional structured-output contract used to request a
 provider-specific JSON Schema. Normally supplied internally from the
 registered scale metadata.}

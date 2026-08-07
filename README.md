@@ -216,6 +216,32 @@ operational instruction for the LLM; it must agree with this definition but is
 not used as the source of scoring rules. Results expose `total_score`, and
 dataset reports include `Total_Score` calculated from the formal definition.
 
+### Two execution modes
+
+In free mode, the LLM is evaluated without a reference answer and its complete
+raw response, including evidence and reasoning, is written to the article audit
+log:
+
+```r
+result <- run_article("path/to/article.pdf", validation_mode = "free")
+```
+
+In reference mode, previously reviewed scores are supplied separately. The raw
+LLM response remains unchanged and the library adds an item-by-item comparison:
+
+```r
+reference <- c(Item_1 = 1, Item_2 = 0.5, Item_3 = 1, Item_4 = 1,
+               Item_5 = 1, Item_6 = 0, Item_7 = 1, Item_8 = 0.5,
+               Item_9 = 1, Item_10 = 1)
+result <- run_article("path/to/article.pdf", validation_mode = "reference",
+  reference_scores = reference)
+result$validation
+```
+
+For datasets, pass a semicolon-separated CSV with `ID` and `Item_1` through
+`Item_n` columns using `reference_csv`. Each audit log then contains both the
+raw LLM response and a `REFERENCE VALIDATION` section.
+
 ## Tests
 
 The package includes `testthat` tests for prompt resolution, strict JSON schema

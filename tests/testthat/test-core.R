@@ -34,6 +34,17 @@ test_that("Gemini structured output schema is generated from scale metadata", {
     c("0.0", "0.5", "1.0", "9.0"))
 })
 
+test_that("audit logs retain the complete raw LLM response", {
+  log <- scaleLLMflow:::build_audit_log(
+    "article", "openai", "gpt-4.1-mini", TRUE,
+    "* Item 1: 1.0", "* Item 1: 1.0", items = 1,
+    raw_response = '{"items":{"1":{"decision":"1.0","evidence":"quoted evidence","reason":"scoring reason"}}}'
+  )
+  expect_match(log, "RAW LLM RESPONSE")
+  expect_match(log, "quoted evidence")
+  expect_match(log, "scoring reason")
+})
+
 testthat::test_that("prompt registry resolves scales and model fallbacks", {
   testthat::expect_true("mqs" %in% available_scales())
   testthat::expect_true("pedro" %in% available_scales())

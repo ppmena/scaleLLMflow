@@ -52,6 +52,21 @@ format_provenance <- function(provenance) {
     vapply(names(provenance), function(key) paste0(key, ": ", provenance[[key]]), character(1))), collapse = "\n")
 }
 
+# Compare an LLM score vector with a previously reviewed reference vector.
+# This function never changes the LLM output; it only reports agreement.
+compare_reference_scores <- function(scores, reference_scores, items) {
+  reference_scores <- reference_scores[paste0("Item_", items)]
+  obtained <- as.numeric(scores[paste0("Item_", items)])
+  expected <- as.numeric(reference_scores)
+  data.frame(
+    Item = paste0("Item_", items),
+    Obtained = obtained,
+    Expected = expected,
+    Correct = !is.na(obtained) & !is.na(expected) & obtained == expected,
+    stringsAsFactors = FALSE
+  )
+}
+
 scale_default_items <- function(scale, items) {
   if (!is.null(items)) return(items)
   if (tolower(scale) == "pedro") return(1:11)
@@ -78,7 +93,7 @@ write_prompt_snapshot <- function(output_dir, prompt_text, resolved_prompt) {
 
 build_audit_log <- function(clean_id, provider, model, strip_references, call_logs, calls_list,
                             scale = "mqs", calls_per_article = 1, items = 1:10,
-                            provenance = NULL) {
+                            provenance = NULL, raw_response = NULL, validation = NULL) {
   consensus_ordered_log <- build_consensus_ordered_log(calls_list, items = items)
   score_header <- if (tolower(scale) == "mqs") {
     "--- MQS CONSENSUS SCORES USED FOR EXCEL ---"
@@ -93,10 +108,12 @@ build_audit_log <- function(clean_id, provider, model, strip_references, call_lo
     paste0("STRIP_REFERENCES: ", as.integer(isTRUE(strip_references))),
     paste0("CALLS_PER_ARTICLE: ", calls_per_article),
     if (!is.null(provenance)) format_provenance(provenance),
+    if (!is.null(validation)) paste("--- REFERENCE VALIDATION ---", validation, sep = "\n\n"),
     score_header,
     consensus_ordered_log,
     "--- INDIVIDUAL ORDERED CALLS ---",
     paste(call_logs, collapse = "\n\n"),
+    if (!is.null(raw_response)) paste("--- RAW LLM RESPONSE ---", raw_response, sep = "\n\n"),
     "--- END OF ORDERED AUDIT ---",
     sep = "\n\n"
   )
@@ -119,7 +136,8 @@ run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini",
                         output_dir = NULL, temperature = 0, top_p = 0.1, timeout = 300,
                         api_key = NULL, project_id = NULL, pdf_path = NULL,
                         max_retries = 3, retry_wait_seconds = 1, retry_backoff = 2,
-                        rate_limit_seconds = 0) {
+                        rate_limit_seconds = 0, reference_scores = NULL,
+                        validation_mode = c("free", "reference")) {
   if (is.null(article_path)) {
     article_path <- pdf_path
   }
@@ -127,6 +145,8 @@ run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini",
     stop("article_path is required.", call. = FALSE)
   }
   items <- scale_default_items(scale, items)
+  validation_mode <- match.arg(validation_mode)
+  if (!is.null(reference_scores)) validation_mode <- "reference"
 
   resolved <- resolve_prompt(scale, model, registry_dir = registry_dir)
   prompt_text <- paste(readLines(resolved$prompt_path, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
@@ -176,6 +196,12 @@ run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini",
   }
   calls_list <- c(ordered_items)
   call_logs <- c(paste("--- ORDERED CALL 1 OF 1 ---", ordered_items, sep = "\n\n"))
+  validation <- NULL
+  if (validation_mode == "reference") {
+    if (is.null(reference_scores)) stop("reference_scores is required in reference mode.", call. = FALSE)
+    validation <- compare_reference_scores(parse_scale_scores(raw_response, items = items, metadata = resolved$metadata), reference_scores, items)
+    validation <- paste(capture.output(print(validation, row.names = FALSE)), collapse = "\n")
+  }
   clean_id <- clean_article_id(article_path)
   audit_log <- build_audit_log(
     clean_id = clean_id,
@@ -186,7 +212,9 @@ run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini",
     calls_list = calls_list,
     scale = scale,
     items = items,
-    provenance = provenance
+    provenance = provenance,
+    raw_response = raw_response,
+    validation = validation
   )
 
   if (!is.null(output_dir)) {
@@ -210,7 +238,10 @@ run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini",
     score_definition = resolved$metadata$scale_definition$total,
     audit_log = audit_log,
     raw_response = raw_response,
-    provenance = provenance
+    provenance = provenance,
+    validation_mode = validation_mode,
+    validation = if (is.null(validation)) NULL else compare_reference_scores(
+      parse_scale_scores(raw_response, items = items, metadata = resolved$metadata), reference_scores, items)
   )
 }
 
@@ -228,11 +259,25 @@ run_dataset <- function(articles_dir, scale = "mqs", provider = "gemini", model 
                         items = NULL, temperature = 0, top_p = 0.1, timeout = 300,
                         api_key = NULL, project_id = NULL, max_retries = 3,
                         retry_wait_seconds = 1, retry_backoff = 2,
-                        rate_limit_seconds = 0) {
+                        rate_limit_seconds = 0, reference_csv = NULL,
+                        validation_mode = c("free", "reference")) {
   if (!dir.exists(articles_dir)) {
     stop("Articles directory not found: ", articles_dir, call. = FALSE)
   }
   items <- scale_default_items(scale, items)
+  validation_mode <- match.arg(validation_mode)
+  if (!is.null(reference_csv)) validation_mode <- "reference"
+  reference_table <- NULL
+  if (validation_mode == "reference") {
+    if (is.null(reference_csv) || !file.exists(reference_csv)) {
+      stop("reference_csv is required in reference mode and must exist.", call. = FALSE)
+    }
+    reference_table <- utils::read.csv2(reference_csv, stringsAsFactors = FALSE, check.names = FALSE)
+    required_columns <- c("ID", paste0("Item_", items))
+    if (!all(required_columns %in% names(reference_table))) {
+      stop("reference_csv must contain: ", paste(required_columns, collapse = ", "), call. = FALSE)
+    }
+  }
   filetype <- validate_filetype(filetype)
   if (max_articles < 0) {
     stop("max_articles must be 0 or higher.", call. = FALSE)
@@ -268,6 +313,13 @@ run_dataset <- function(articles_dir, scale = "mqs", provider = "gemini", model 
     }
 
     result <- tryCatch(
+      {
+      reference_row <- NULL
+      if (validation_mode == "reference") {
+        reference_row <- reference_table[reference_table$ID == clean_id, , drop = FALSE]
+        if (nrow(reference_row) != 1) stop("Reference CSV must contain exactly one row for ID: ", clean_id, call. = FALSE)
+        reference_row <- unlist(reference_row[1, paste0("Item_", items)], use.names = TRUE)
+      }
       run_article(
         article_path = article_path,
         scale = scale,
@@ -286,8 +338,11 @@ run_dataset <- function(articles_dir, scale = "mqs", provider = "gemini", model 
         max_retries = max_retries,
         retry_wait_seconds = retry_wait_seconds,
         retry_backoff = retry_backoff,
-        rate_limit_seconds = rate_limit_seconds
-      ),
+        rate_limit_seconds = rate_limit_seconds,
+        reference_scores = reference_row,
+        validation_mode = validation_mode
+      )
+      },
       error = function(e) {
         message("Skipping ", basename(article_path), ": ", conditionMessage(e))
         errors_list[[length(errors_list) + 1]] <<- data.frame(
