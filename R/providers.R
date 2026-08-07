@@ -150,7 +150,8 @@ call_gemini <- function(prompt, model, temperature = 0, top_p = 0.1, timeout = 3
   result
 }
 
-call_openai <- function(prompt, model, temperature = 0, timeout = 300, api_key = NULL, project_id = NULL) {
+call_openai <- function(prompt, model, temperature = 0, timeout = 300, api_key = NULL,
+                        project_id = NULL, response_schema = NULL) {
   if (is.null(api_key) || !nzchar(api_key)) {
     api_key <- get_required_env("OPENAI_API_KEY")
   }
@@ -163,6 +164,14 @@ call_openai <- function(prompt, model, temperature = 0, timeout = 300, api_key =
     input = prompt,
     temperature = temperature
   )
+  if (!is.null(response_schema)) {
+    body$text <- list(format = list(
+      type = "json_schema",
+      name = "scale_rating",
+      strict = TRUE,
+      schema = build_gemini_json_schema(response_schema)
+    ))
+  }
 
   req <- httr2::request("https://api.openai.com/v1/responses") |>
     httr2::req_auth_bearer_token(api_key)
@@ -230,7 +239,7 @@ run_llm <- function(prompt, provider = "gemini", model = "gemini-3.6-flash",
   }
 
   if (provider == "openai") {
-    return(with_retries(function() call_openai(prompt, model, temperature, timeout, api_key, project_id),
+    return(with_retries(function() call_openai(prompt, model, temperature, timeout, api_key, project_id, response_schema),
       provider, model, max_retries, retry_wait_seconds, retry_backoff, rate_limit_seconds))
   }
 

@@ -93,6 +93,14 @@ validate_scale_response <- function(text, metadata, items) {
   schema <- metadata$response_schema
   if (is.null(schema) || identical(schema$type, "legacy_lines")) return(response)
 
+  # OpenAI Responses models may return the schema's item properties directly
+  # when structured output is not enabled by the account/model. Wrap that
+  # exact, complete item object without accepting missing or extra content.
+  required <- as.character(unlist(schema$required_item_keys, use.names = FALSE))
+  if (is.null(response$items) && setequal(names(response), required)) {
+    response <- list(items = response)
+  }
+
   if (!identical(schema$type, "object") || is.null(response$items) || !is.list(response$items)) {
     stop("Response does not match the registered JSON schema: expected an 'items' object.", call. = FALSE)
   }
