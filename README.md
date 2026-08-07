@@ -245,6 +245,11 @@ For datasets, pass a semicolon-separated CSV with `ID` and `Item_1` through
 `Item_n` columns using `reference_csv`. Each audit log then contains both the
 raw LLM response and a `REFERENCE VALIDATION` section.
 
+Evidence is also exported separately for easy review: each article receives an
+`*_Evidence.csv` file, and each dataset receives `<scale>_Evidence_Report.csv`.
+These files contain one row per item with `ID`, `Item`, `Score`, `Decision`,
+`Evidence`, and `Reason` columns.
+
 ## Tests
 
 The package includes `testthat` tests for prompt resolution, strict JSON schema

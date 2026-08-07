@@ -61,6 +61,26 @@ validate_scale_scores <- function(scores, items, metadata) {
   invisible(TRUE)
 }
 
+# Return evidence and reasons as a flat, review-friendly table. This keeps the
+# human-readable rationale separate from the raw provider response.
+extract_scale_evidence <- function(text, items, metadata) {
+  response <- validate_scale_response(text, metadata, items)
+  key_map <- metadata$response_schema$item_key_map
+  rows <- lapply(items, function(item_number) {
+    key <- as.character(item_number)
+    if (!is.null(key_map)) key <- as.character(key_map[[key]])
+    item <- response$items[[key]]
+    data.frame(
+      Item = paste0("Item_", item_number),
+      Decision = as.character(item$decision),
+      Evidence = as.character(item$evidence),
+      Reason = as.character(item$reason),
+      stringsAsFactors = FALSE
+    )
+  })
+  do.call(rbind, rows)
+}
+
 # Parse a response as one JSON document.  Strict scale prompts must return
 # JSON only; accepting Markdown fences here would hide prompt violations.
 parse_strict_json <- function(text) {

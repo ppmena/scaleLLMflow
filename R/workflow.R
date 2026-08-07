@@ -188,6 +188,9 @@ run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini",
   provenance$response_characters <- nchar(raw_response)
   provenance$response_bytes <- nchar(raw_response, type = "bytes")
   provenance$response_sha256 <- sha256_text(raw_response)
+  evidence <- extract_scale_evidence(raw_response, items, resolved$metadata)
+  evidence$Score <- as.numeric(parse_scale_scores(raw_response, items = items, metadata = resolved$metadata))
+  evidence <- evidence[c("Item", "Score", "Decision", "Evidence", "Reason")]
 
   # Validate before parsing so malformed model output fails loudly and is
   # recorded by run_dataset instead of producing incomplete scores.
@@ -229,6 +232,7 @@ run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini",
       dir.create(output_dir, recursive = TRUE)
     }
     write_prompt_snapshot(output_dir, prompt_text, resolved)
+    utils::write.csv2(evidence, file.path(output_dir, paste0(clean_id, "_Evidence.csv")), row.names = FALSE)
     writeLines(audit_log, file.path(output_dir, paste0(clean_id, "_AuditLog.txt")), useBytes = TRUE)
   }
 
@@ -248,7 +252,8 @@ run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini",
     provenance = provenance,
     validation_mode = validation_mode,
     validation = if (is.null(validation)) NULL else compare_reference_scores(
-      parse_scale_scores(raw_response, items = items, metadata = resolved$metadata), reference_scores, items)
+      parse_scale_scores(raw_response, items = items, metadata = resolved$metadata), reference_scores, items),
+    evidence = evidence
   )
 }
 
@@ -299,6 +304,7 @@ run_dataset <- function(articles_dir, scale = "mqs", provider = "gemini", model 
 
   article_paths <- list_article_files(articles_dir, filetype = filetype)
   results_list <- list()
+  evidence_list <- list()
   errors_list <- list()
   processed_pending <- 0
 
@@ -365,6 +371,11 @@ run_dataset <- function(articles_dir, scale = "mqs", provider = "gemini", model 
     processed_pending <- processed_pending + 1
     if (is.null(result)) next
 
+    result_evidence <- result$evidence
+    result_evidence$ID <- clean_id
+    result_evidence <- result_evidence[c("ID", "Item", "Score", "Decision", "Evidence", "Reason")]
+    evidence_list[[length(evidence_list) + 1]] <- result_evidence
+
     record <- build_consensus_record(clean_id, basename(article_path), list(result$audit_log), items = items, metadata = resolved$metadata)
     if (!is.null(record)) {
       results_list[[length(results_list) + 1]] <- record
@@ -386,6 +397,11 @@ run_dataset <- function(articles_dir, scale = "mqs", provider = "gemini", model 
     do.call(rbind, errors_list)
   }
   utils::write.csv2(errors_df, errors_path, row.names = FALSE)
+  evidence_path <- file.path(output_dir, paste0(tolower(scale), "_Evidence_Report.csv"))
+  evidence_df <- if (length(evidence_list) == 0) {
+    data.frame(ID = character(), Item = character(), Score = numeric(), Decision = character(), Evidence = character(), Reason = character(), stringsAsFactors = FALSE)
+  } else do.call(rbind, evidence_list)
+  utils::write.csv2(evidence_df, evidence_path, row.names = FALSE)
 
   list(
     results = final_df,
@@ -394,6 +410,8 @@ run_dataset <- function(articles_dir, scale = "mqs", provider = "gemini", model 
     processed_pending_articles = processed_pending,
     errors = errors_df,
     errors_path = errors_path,
+    evidence = evidence_df,
+    evidence_path = evidence_path,
     resolved_prompt = resolved
   )
 }
