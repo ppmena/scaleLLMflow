@@ -43,6 +43,14 @@ test_that("audit logs retain the complete raw LLM response", {
   expect_match(log, "RAW LLM RESPONSE")
   expect_match(log, "quoted evidence")
   expect_match(log, "scoring reason")
+  expect_false(grepl("INDIVIDUAL ORDERED CALLS", log, fixed = TRUE))
+
+  repeated_log <- scaleLLMflow:::build_audit_log(
+    "article", "openai", "gpt-4.1-mini", TRUE,
+    c("call one", "call two"), c("* Item 1: 1.0", "* Item 1: 1.0"),
+    items = 1, calls_per_article = 2
+  )
+  expect_match(repeated_log, "INDIVIDUAL ORDERED CALLS")
 })
 
 testthat::test_that("prompt registry resolves scales and model fallbacks", {

@@ -101,7 +101,7 @@ build_audit_log <- function(clean_id, provider, model, strip_references, call_lo
     paste0("--- ", toupper(scale), " CONSENSUS SCORES USED FOR EXCEL ---")
   }
 
-  paste(
+  sections <- c(
     paste0("ID: ", clean_id),
     paste0("MODEL_PROVIDER: ", provider_alias(provider)),
     paste0("MODEL: ", model),
@@ -110,13 +110,20 @@ build_audit_log <- function(clean_id, provider, model, strip_references, call_lo
     if (!is.null(provenance)) format_provenance(provenance),
     if (!is.null(validation)) paste("--- REFERENCE VALIDATION ---", validation, sep = "\n\n"),
     score_header,
-    consensus_ordered_log,
-    "--- INDIVIDUAL ORDERED CALLS ---",
-    paste(call_logs, collapse = "\n\n"),
-    if (!is.null(raw_response)) paste("--- RAW LLM RESPONSE ---", raw_response, sep = "\n\n"),
-    "--- END OF ORDERED AUDIT ---",
-    sep = "\n\n"
+    consensus_ordered_log
   )
+  # With one call, the consensus list is already the complete machine-readable
+  # score output. Keep individual call blocks only when they add information.
+  if (calls_per_article > 1) {
+    sections <- c(sections,
+      "--- INDIVIDUAL ORDERED CALLS ---",
+      paste(call_logs, collapse = "\n\n"))
+  }
+  sections <- c(sections,
+    if (!is.null(raw_response)) paste("--- RAW LLM RESPONSE ---", raw_response, sep = "\n\n"),
+    "--- END OF ORDERED AUDIT ---"
+  )
+  paste(sections, collapse = "\n\n")
 }
 
 #' Run one article file through a registered scale prompt.
