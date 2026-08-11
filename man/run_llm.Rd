@@ -29,7 +29,7 @@ run_llm(
 
 \item{temperature}{Sampling temperature.}
 
-\item{top_p}{Gemini nucleus-sampling value; ignored by the OpenAI integration.}
+\item{top_p}{Gemini nucleus-sampling value; ignored by OpenAI and Claude.}
 
 \item{timeout}{Maximum duration in seconds for each individual API attempt.}
 

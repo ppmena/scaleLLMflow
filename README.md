@@ -9,7 +9,8 @@ The package provides the execution framework: document extraction, prompt resolu
 From a local checkout:
 
 ```powershell
-R CMD INSTALL scaleLLMflow_0.1.0.tar.gz
+R CMD build .
+R CMD INSTALL scaleLLMflow_0.2.0.tar.gz
 ```
 
 For development:

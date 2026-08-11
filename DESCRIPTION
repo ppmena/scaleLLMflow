@@ -10,9 +10,9 @@ Authors@R: person(
     )
 Author: Jose Mena-Raposo
 Maintainer: J.Mena <jmena@us.es>
-Description: Provides reusable functions to register prompts by scale and model,
-    resolve the best available prompt for a requested AI model, extract PDF text,
-    call user-configured LLM APIs, and parse scale item scores. 
+Description: Provides reusable functions to register prompts by scale, provider,
+    and model, discover provider model catalogues, extract PDF text, call
+    user-configured LLM APIs, and parse scale item scores.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Imports:

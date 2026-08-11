@@ -255,7 +255,7 @@ call_claude <- function(prompt, model, temperature = 0, timeout = 300,
 #' @param provider `"gemini"`, `"openai"`, `"chatgpt"`, `"claude"`, or `"anthropic"`.
 #' @param model Model id.
 #' @param temperature Sampling temperature.
-#' @param top_p Gemini nucleus-sampling value; ignored by the OpenAI integration.
+#' @param top_p Gemini nucleus-sampling value; ignored by OpenAI and Claude.
 #' @param timeout Maximum duration in seconds for each individual API attempt.
 #' @param max_retries Maximum retries for transient failures.
 #' @param retry_wait_seconds Initial exponential-backoff delay.
