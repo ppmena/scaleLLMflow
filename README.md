@@ -38,7 +38,6 @@ API key in memory for a single call:
 library(scaleLLMflow)
 
 available_scales()
-available_models("mqs")
 
 result <- run_article(
   article_path = "path/to/article.pdf",
@@ -140,7 +139,6 @@ To inspect the registry:
 
 ```r
 available_scales()
-available_models("mqs")
 resolved <- resolve_prompt("mqs", "gemini-3.6-flash")
 resolved$prompt_path
 

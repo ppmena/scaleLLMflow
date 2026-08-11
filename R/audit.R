@@ -31,7 +31,7 @@ audit_model_registry <- function(registry_dir = NULL, output_dir = NULL,
   records <- list()
   for (scale in available_scales(root)) {
     scale_dir <- file.path(root, scale)
-    models <- available_models(scale, root)
+    models <- registered_prompt_folders(scale, root)
     if (length(models) == 0) {
       records[[length(records) + 1]] <- registry_check(scale, "", "model_folders", "ERROR", "No model folders found.")
       next

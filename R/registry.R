@@ -49,12 +49,7 @@ available_scales <- function(registry_dir = NULL) {
   list_dirs(registry_root(registry_dir))
 }
 
-#' List trained or fallback model prompt folders for a scale.
-#'
-#' @param scale Scale name, for example `"mqs"`.
-#' @param registry_dir Optional registry root. Defaults to bundled package prompts.
-#' @export
-available_models <- function(scale, registry_dir = NULL) {
+registered_prompt_folders <- function(scale, registry_dir = NULL) {
   scale_dir <- file.path(registry_root(registry_dir), tolower(scale))
   list_dirs(scale_dir)
 }
@@ -76,7 +71,7 @@ resolve_prompt <- function(scale, model, provider = NULL, registry_dir = NULL) {
   scale_name <- tolower(scale)
   scale_dir <- file.path(root, scale_name)
   requested <- normalize_model_name(model)
-  available <- available_models(scale_name, root)
+  available <- registered_prompt_folders(scale_name, root)
 
   if (length(available) == 0) {
     stop("No prompt registry found for scale: ", scale_name, call. = FALSE)
