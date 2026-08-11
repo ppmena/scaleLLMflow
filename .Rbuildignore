@@ -3,3 +3,5 @@
 ^\.Rbuildignore$
 ^.*\.Rcheck$
 ^.*\.tar\.gz$
+^.*\.Rproj$
+^\.Rproj\.user$

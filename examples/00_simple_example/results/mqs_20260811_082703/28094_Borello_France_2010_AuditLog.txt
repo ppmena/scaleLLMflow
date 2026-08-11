@@ -1,0 +1,70 @@
+ID: 28094_Borello_France_2010
+
+MODEL_PROVIDER: gemini
+
+MODEL: gemini-3.6-flash
+
+STRIP_REFERENCES: 1
+
+CALLS_PER_ARTICLE: 1
+
+--- REPRODUCIBILITY METADATA ---
+created_at_utc: 2026-08-11 06:27:51 UTC
+package_version: 0.1.0
+r_version: 4.3.1
+platform: x86_64-w64-mingw32
+article_path: C:/Users/jmenar/Downloads/transfer/DOCTORADO PSICOLOGIA/TRABAJO/20260407 AUTOMATIZACIÓN ESCALA LLM/LIBRERIA/scaleLLMflow/examples/00_simple_example/articles/28094_Borello_France_2010.pdf
+article_file_bytes: 666570
+article_text_characters: 84952
+article_text_bytes: 85389
+prompt_characters: 10071
+prompt_bytes: 10071
+request_characters: 95079
+request_bytes: 95516
+article_text_sha256: 5d4a6cd7b88035cd277f8904020b2e65ed7c5cce6d0fc3ba83431b6c7d5805c8
+prompt_sha256: 90917cf2bdd93db1f2645d72f1189652e1e9503f3a26864916745e6f2176b80a
+request_sha256: fdef817e5733e39f9a882eff491174387b13925723d8c80147665ad585639a0d
+requested_model: gemini-3.6-flash
+selected_prompt_model: gemini-2.5-flash
+prompt_match_strategy: family:flash
+prompt_source: C:/Users/jmenar/AppData/Local/R/win-library/4.3/scaleLLMflow/scales/mqs/gemini-2.5-flash/prompt.md
+provider: gemini
+temperature: 0
+top_p: 0.1
+timeout_seconds: 300
+strip_references: TRUE
+max_retries: 3
+retry_wait_seconds: 1
+retry_backoff: 2
+rate_limit_seconds: 0
+response_characters: 3692
+response_bytes: 3692
+response_sha256: 8df1c68260a92ae9b2bf3eeb0ec9f986afff4423cd71b926f70c8d6269b94233
+
+--- MQS CONSENSUS SCORES USED FOR EXCEL ---
+
+* Item 1: 1.0
+
+* Item 2: 1.0
+
+* Item 3: 9.0
+
+* Item 4: 0.0
+
+* Item 5: 1.0
+
+* Item 6: 1.0
+
+* Item 7: 1.0
+
+* Item 8: 0.0
+
+* Item 9: 0.5
+
+* Item 10: 1.0
+
+--- RAW LLM RESPONSE ---
+
+{"items":{"1":{"decision":"1.0","evidence":"To be eligible for the study, women had to demonstrate a post-void residual volume of less than 150 mL and the ability to contract their PFMs. They also had to show 7 or more episodes of UI on a 7-day baseline diary. Finally, they had to self-report persistent UI for at least 3 months, no current use of antimuscarinics or other medications that could affect UI, and no history of neurologic diseases or conditions...","reason":"Explicit inclusion and exclusion criteria are reported in the Setting and Participants section without exceptions."},"2":{"decision":"1.0","evidence":"307 women were enrolled, and 154 were randomly assigned to receive the combined drug and behavioral treatment... 144 women (94%) attended at least 3 therapy visits... By treatment visit 4 (n=143)... 12-month follow-up (n=110).","reason":"Participant numbers across time points are clear, consistent, and calculable across intervention visits and follow-up assessments."},"3":{"decision":"9.0","evidence":"This article reports adherence data from the subgroup of women who received the behavioral intervention in combination with drug therapy.","reason":"The study reports on a single arm/subgroup analysis with no cross-group comparison."},"4":{"decision":"0.0","evidence":"Associations of factors hypothesized to be related to exercise adherence were explored using least squares regression analysis... As data were obtained from multiple centers, study site was included as a random effect in the multivariable analyses.","reason":"No statistical method for imputing missing outcome data (e.g., MI, FIML, ML) was reported or utilized."},"5":{"decision":"1.0","evidence":"This was a prospectively planned secondary data analysis from a 2-stage, multicenter, randomized clinical trial.","reason":"Participants were randomly assigned to study conditions in an RCT."},"6":{"decision":"1.0","evidence":"Measurements. Pelvic-floor muscle exercise adherence and exercise barriers were assessed during the intervention phase and 1 year afterward.","reason":"The follow-up period extends to 12 months after intervention, which is greater than 6 months."},"7":{"decision":"1.0","evidence":"Pelvic-floor muscle exercise adherence and exercise barriers were assessed during the intervention phase and 1 year afterward.","reason":"Assessments included baseline/pre-intervention measures, post-baseline/intervention measures, and a 12-month post-intervention follow-up."},"8":{"decision":"0.0","evidence":"To ensure standardized administration across clinicians and clinical sites, behavioral interventionists attended centralized training... Other means to standardize the behavioral intervention included use of encounter forms...","reason":"After excluding randomization, standard interventionist training, and routine statistical adjustments, no active procedural control techniques were used."},"9":{"decision":"0.5","evidence":"The questionnaires did not undergo psychometric testing. To establish content validity, we modeled the questionnaires after the one described by Sluijs et al.21","reason":"Psychometric properties/validity were derived or modeled from prior literature, with explicit mention that the instrument was not psychometrically tested on the current sample."},"10":{"decision":"1.0","evidence":"Urge urinary incontinence (UUI), defined as the involuntary loss of urine associated with a strong desire to void... Pelvic-floor muscle exercise adherence was measured using 2 self-administered exercise questionnaires...","reason":"Outcomes and primary conditions are defined both conceptually in the Introduction and empirically in the Measures section."}}}
+
+--- END OF ORDERED AUDIT ---

@@ -166,9 +166,11 @@ results <- run_dataset(
 
 `filetype` can be `pdf`, `txt`, `md`, or `auto`. With `auto`, the library analyzes all `.pdf`, `.txt`, and `.md` files in the folder.
 
-If an article fails during a dataset run, the error is recorded in
-`<scale>_Errors.csv` and processing continues with the remaining articles.
-The consensus report is still written for successful articles.
+Every dataset run is written to a new timestamped directory below
+`output_dir`, named `<scale>_YYYYMMDD_HHMMSS`. If an article fails, the error
+is recorded in `<scale>_Errors.csv` inside that run directory and processing
+continues. The errors file is not created when there are no errors.
+Successful scores are written to `<scale>_Consensus_Report.csv`.
 
 Provider calls use bounded resilience defaults: up to three retries for network
 errors, timeouts, HTTP 408/409/425/429, and HTTP 5xx responses; exponential
@@ -261,10 +263,11 @@ For datasets, pass a semicolon-separated CSV with `ID` and `Item_1` through
 `Item_n` columns using `reference_csv`. Each audit log then contains both the
 raw LLM response and a `REFERENCE VALIDATION` section.
 
-Evidence is also exported separately for easy review: each article receives an
-`*_Evidence.csv` file, and each dataset receives `<scale>_Evidence_Report.csv`.
-These files contain one row per item with `ID`, `Item`, `Score`, `Decision`,
-`Evidence`, and `Reason` columns.
+Evidence is exported in one consolidated dataset file,
+`<scale>_Evidence_Report.csv`, rather than duplicated in one file per article.
+The file contains one row per item with `ID`, `Item`, `Score`, `Decision`,
+`Evidence`, and `Reason` columns. Individual `run_article()` calls still write
+their own `*_Evidence.csv` file.
 
 ## Tests
 

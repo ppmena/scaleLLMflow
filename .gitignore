@@ -5,3 +5,5 @@
 *.tar.gz
 .Renviron
 resultados/
+developer/
+^examples/.*/results(/.*)?$

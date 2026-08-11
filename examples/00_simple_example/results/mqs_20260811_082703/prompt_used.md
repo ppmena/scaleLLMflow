@@ -1,3 +1,10 @@
+SCALE: mqs
+REQUESTED_MODEL: gemini-3.6-flash
+SELECTED_PROMPT_MODEL: gemini-2.5-flash
+PROMPT_MATCH_STRATEGY: family:flash
+PROMPT_SOURCE: C:/Users/jmenar/AppData/Local/R/win-library/4.3/scaleLLMflow/scales/mqs/gemini-2.5-flash/prompt.md
+--- PROMPT TEXT ---
+
 RUN_VERSION: v019
 MODEL: gemini-2.5-flash
 CALLS_PER_ARTICLE: 1
@@ -97,6 +104,7 @@ GLOBAL RULE: Use explicit information from text, tables, figures, captions, and 
 
 --- STRICT JSON OUTPUT ---
 Return one valid JSON object only. Do not use Markdown fences or add any text outside the JSON object.
-Use the exact MQS JSON schema documented in the matching metadata.json: items 1 through 10, each with decision, evidence, and reason.
-Use only 0.0, 0.5, 1.0, or 9.0 where the rubric allows not applicable.
+Use this exact structure, with every item present:
+{"items":{"1":{"decision":"0.0|0.5|1.0|9.0","evidence":"brief quote or paraphrase from the article","reason":"brief scoring reason"},"2":{"decision":"0.0|0.5|1.0|9.0","evidence":"...","reason":"..."},"3":{"decision":"0.0|0.5|1.0|9.0","evidence":"...","reason":"..."},"4":{"decision":"0.0|0.5|1.0|9.0","evidence":"...","reason":"..."},"5":{"decision":"0.0|0.5|1.0|9.0","evidence":"...","reason":"..."},"6":{"decision":"0.0|0.5|1.0|9.0","evidence":"...","reason":"..."},"7":{"decision":"0.0|0.5|1.0|9.0","evidence":"...","reason":"..."},"8":{"decision":"0.0|0.5|1.0|9.0","evidence":"...","reason":"..."},"9":{"decision":"0.0|0.5|1.0|9.0","evidence":"...","reason":"..."},"10":{"decision":"0.0|0.5|1.0|9.0","evidence":"...","reason":"..."}}}
+Use only 0.0, 0.5, 1.0, or 9.0 where the rubric allows not applicable. Use valid JSON strings and escape quotation marks inside evidence.
 

@@ -47,12 +47,12 @@ test_that("resolve_prompt resolves exact and family fallbacks", {
   # Since registry_dir can be supplied, we can test with the package's built-in scales
   resolved <- scaleLLMflow::resolve_prompt("mqs", "gemini-2.5-flash")
   expect_equal(resolved$scale, "mqs")
-  expect_equal(resolved$selected_model, "gemini-2.5-flash")
-  expect_equal(resolved$strategy, "exact")
+  expect_equal(resolved$selected_model, "generic")
+  expect_equal(resolved$strategy, "generic")
 
   resolved_fallback <- scaleLLMflow::resolve_prompt("mqs", "gemini-1.5-flash")
   expect_equal(resolved_fallback$scale, "mqs")
-  expect_equal(resolved_fallback$strategy, "family:flash")
+  expect_equal(resolved_fallback$strategy, "generic")
 })
 
 test_that("registered JSON responses are validated and converted", {
@@ -67,4 +67,15 @@ test_that("registered JSON responses are validated and converted", {
   expect_equal(unname(parse_scale_scores(text, 1:11, metadata)[2]), 1)
   expect_error(parse_scale_scores(sub("Yes", "Maybe", text, fixed = TRUE), 1:11, metadata),
     "Invalid decision")
+})
+
+test_that("JSON with a terminal closing fence is normalized safely", {
+  metadata <- scaleLLMflow:::read_prompt_metadata(
+    system.file("scales/mqs/generic", package = "scaleLLMflow")
+  )
+  response <- list(items = setNames(lapply(seq_len(10), function(i) {
+    list(decision = "1.0", evidence = "evidence", reason = "reason")
+  }), as.character(seq_len(10))))
+  text <- paste0(jsonlite::toJSON(response, auto_unbox = TRUE), "```")
+  expect_equal(unname(parse_scale_scores(text, 1:10, metadata)), rep(1, 10))
 })

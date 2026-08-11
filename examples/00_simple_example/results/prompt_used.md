@@ -1,3 +1,10 @@
+SCALE: mqs
+REQUESTED_MODEL: gemini-3.6-flash
+SELECTED_PROMPT_MODEL: gemini-2.5-flash
+PROMPT_MATCH_STRATEGY: family:flash
+PROMPT_SOURCE: C:/Users/jmenar/AppData/Local/R/win-library/4.3/scaleLLMflow/scales/mqs/gemini-2.5-flash/prompt.md
+--- PROMPT TEXT ---
+
 RUN_VERSION: v019
 MODEL: gemini-2.5-flash
 CALLS_PER_ARTICLE: 1

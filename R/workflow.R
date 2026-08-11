@@ -137,6 +137,8 @@ build_audit_log <- function(clean_id, provider, model, strip_references, call_lo
 #' @param strip_references Whether to remove references before the LLM call.
 #' @param items Item ids to parse. Defaults to 1:10.
 #' @param output_dir Optional output directory for an audit log.
+#' @param write_evidence Whether to write the per-article evidence CSV. Dataset
+#' workflows set this to `FALSE` because they write one consolidated report.
 #' @export
 run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini", model = "gemini-3.6-flash",
                         registry_dir = NULL, filetype = "auto", strip_references = TRUE, items = NULL,
@@ -144,7 +146,7 @@ run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini",
                         api_key = NULL, project_id = NULL, pdf_path = NULL,
                         max_retries = 3, retry_wait_seconds = 1, retry_backoff = 2,
                         rate_limit_seconds = 0, reference_scores = NULL,
-                        validation_mode = c("free", "reference")) {
+                        validation_mode = c("free", "reference"), write_evidence = TRUE) {
   if (is.null(article_path)) {
     article_path <- pdf_path
   }
@@ -232,7 +234,9 @@ run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini",
       dir.create(output_dir, recursive = TRUE)
     }
     write_prompt_snapshot(output_dir, prompt_text, resolved)
-    utils::write.csv2(evidence, file.path(output_dir, paste0(clean_id, "_Evidence.csv")), row.names = FALSE)
+    if (isTRUE(write_evidence)) {
+      utils::write.csv2(evidence, file.path(output_dir, paste0(clean_id, "_Evidence.csv")), row.names = FALSE)
+    }
     writeLines(audit_log, file.path(output_dir, paste0(clean_id, "_AuditLog.txt")), useBytes = TRUE)
   }
 
@@ -265,6 +269,8 @@ run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini",
 #' @param filetype One of `"auto"`, `"pdf"`, `"txt"`, or `"md"`.
 #' @param output_dir Directory where audit logs and CSV are written.
 #' @param max_articles Maximum pending PDFs to process. `0` means all.
+#' @return A list containing the timestamped run directory, consensus report,
+#' consolidated evidence report, and errors when any occurred.
 #' @export
 run_dataset <- function(articles_dir, scale = "mqs", provider = "gemini", model = "gemini-3.6-flash",
                         output_dir, registry_dir = NULL, filetype = "auto", strip_references = TRUE, max_articles = 0,
@@ -294,9 +300,16 @@ run_dataset <- function(articles_dir, scale = "mqs", provider = "gemini", model 
   if (max_articles < 0) {
     stop("max_articles must be 0 or higher.", call. = FALSE)
   }
-  if (!dir.exists(output_dir)) {
-    dir.create(output_dir, recursive = TRUE)
+  if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
+  run_stamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
+  run_dir <- file.path(output_dir, paste0(tolower(scale), "_", run_stamp))
+  suffix <- 1L
+  while (dir.exists(run_dir)) {
+    run_dir <- file.path(output_dir, paste0(tolower(scale), "_", run_stamp, "_", suffix))
+    suffix <- suffix + 1L
   }
+  dir.create(run_dir, recursive = TRUE)
+  output_dir <- run_dir
 
   resolved <- resolve_prompt(scale, model, registry_dir = registry_dir)
   prompt_text <- paste(readLines(resolved$prompt_path, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
@@ -353,7 +366,8 @@ run_dataset <- function(articles_dir, scale = "mqs", provider = "gemini", model 
         retry_backoff = retry_backoff,
         rate_limit_seconds = rate_limit_seconds,
         reference_scores = reference_row,
-        validation_mode = validation_mode
+        validation_mode = validation_mode,
+        write_evidence = FALSE
       )
       },
       error = function(e) {
@@ -390,13 +404,16 @@ run_dataset <- function(articles_dir, scale = "mqs", provider = "gemini", model 
 
   csv_path <- file.path(output_dir, paste0(tolower(scale), "_Consensus_Report.csv"))
   utils::write.csv2(final_df, csv_path, row.names = FALSE)
-  errors_path <- file.path(output_dir, paste0(tolower(scale), "_Errors.csv"))
   errors_df <- if (length(errors_list) == 0) {
     data.frame(ID = character(), File = character(), Error = character(), stringsAsFactors = FALSE)
   } else {
     do.call(rbind, errors_list)
   }
-  utils::write.csv2(errors_df, errors_path, row.names = FALSE)
+  errors_path <- NULL
+  if (nrow(errors_df) > 0) {
+    errors_path <- file.path(output_dir, paste0(tolower(scale), "_Errors.csv"))
+    utils::write.csv2(errors_df, errors_path, row.names = FALSE)
+  }
   evidence_path <- file.path(output_dir, paste0(tolower(scale), "_Evidence_Report.csv"))
   evidence_df <- if (length(evidence_list) == 0) {
     data.frame(ID = character(), Item = character(), Score = numeric(), Decision = character(), Evidence = character(), Reason = character(), stringsAsFactors = FALSE)

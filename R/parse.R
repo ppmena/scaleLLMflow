@@ -97,6 +97,11 @@ parse_strict_json <- function(text) {
     normalized <- sub("```\\s*$", "", normalized, perl = TRUE)
     normalized <- trimws(normalized)
   }
+  # Gemini can occasionally omit the opening fence while retaining the
+  # closing fence.  Remove that single terminal marker only; all other
+  # trailing content remains invalid and is reported by the JSON parser.
+  normalized <- sub("```\\s*$", "", normalized, perl = TRUE)
+  normalized <- trimws(normalized)
   parsed <- tryCatch(jsonlite::fromJSON(normalized, simplifyVector = FALSE),
     error = function(e) stop("The LLM response is not valid JSON: ", conditionMessage(e), call. = FALSE))
   if (!is.list(parsed)) {
@@ -212,6 +217,10 @@ get_item_score <- function(item_number, txt) {
     key <- pedro_keys[[as.integer(item_number)]]
     if (!is.null(json) && !is.null(key) && !is.null(json$items[[key]])) {
       decision <- tolower(trimws(as.character(json$items[[key]]$decision)))
+      if (length(decision) != 1L) {
+        stop("Invalid decision for item ", item_number, ": expected one value, received ",
+          length(decision), ".", call. = FALSE)
+      }
       if (decision %in% c("yes", "no")) return(ifelse(decision == "yes", 1, 0))
     }
   }
@@ -236,6 +245,10 @@ json_item_score <- function(item_number, response, metadata) {
   key_map <- metadata$response_schema$item_key_map
   if (!is.null(key_map)) key <- as.character(key_map[[key]])
   decision <- response$items[[key]]$decision
+  if (length(decision) != 1L) {
+    stop("Invalid decision for ", key, ": expected one value, received ",
+      length(decision), ".", call. = FALSE)
+  }
   if (tolower(decision) %in% c("yes", "no")) return(ifelse(tolower(decision) == "yes", 1, 0))
   as.numeric(decision)
 }

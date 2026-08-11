@@ -1,0 +1,123 @@
+ID: 25896_Graves_2009
+
+MODEL_PROVIDER: gemini
+
+MODEL: gemini-3.6-flash
+
+STRIP_REFERENCES: 1
+
+CALLS_PER_ARTICLE: 1
+
+--- REPRODUCIBILITY METADATA ---
+created_at_utc: 2026-08-10 13:41:49 UTC
+package_version: 0.1.0
+r_version: 4.3.1
+platform: x86_64-w64-mingw32
+article_path: C:/Users/jmenar/Downloads/transfer/DOCTORADO PSICOLOGIA/TRABAJO/20260407 AUTOMATIZACIÓN ESCALA LLM/LIBRERIA/scaleLLMflow/examples/00_simple_example/articles/25896_Graves_2009.pdf
+article_file_bytes: 284816
+article_text_characters: 42188
+article_text_bytes: 42240
+prompt_characters: 10071
+prompt_bytes: 10071
+request_characters: 52315
+request_bytes: 52367
+article_text_sha256: 818517cd86a213e21a342f3d16183f704643414cf0509579a5e3c7b069cf0a21
+prompt_sha256: 90917cf2bdd93db1f2645d72f1189652e1e9503f3a26864916745e6f2176b80a
+request_sha256: c6dcaba5dcae3b46851ecea9e7a7e3e91e3c3fb523faf3bcf6e06ae99281965e
+requested_model: gemini-3.6-flash
+selected_prompt_model: gemini-2.5-flash
+prompt_match_strategy: family:flash
+prompt_source: C:/Users/jmenar/AppData/Local/R/win-library/4.3/scaleLLMflow/scales/mqs/gemini-2.5-flash/prompt.md
+provider: gemini
+temperature: 0
+top_p: 0.1
+timeout_seconds: 300
+strip_references: TRUE
+max_retries: 3
+retry_wait_seconds: 1
+retry_backoff: 2
+rate_limit_seconds: 0
+response_characters: 4983
+response_bytes: 4987
+response_sha256: 8b2de7f4a96e06e36913ba52dd15d3e484c90dde037ff41e668650798b69a21b
+
+--- MQS CONSENSUS SCORES USED FOR EXCEL ---
+
+* Item 1: 0.5
+
+* Item 2: 0.5
+
+* Item 3: 0.0
+
+* Item 4: 0.5
+
+* Item 5: 1.0
+
+* Item 6: 0.0
+
+* Item 7: 0.5
+
+* Item 8: 0.0
+
+* Item 9: 0.5
+
+* Item 10: 1.0
+
+--- RAW LLM RESPONSE ---
+
+{
+  "items": {
+    "1": {
+      "decision": "0.5",
+      "evidence": "434 adult participants with type 2 diabetes or hypertension (mean age 58.2 [SD 11.8]; 61% female; mean BMI 31.1 [SD 6.8]) from a disadvantaged community in Queensland were used for cost-effectiveness modelling. Participants were recruited from ten primary care practices via electronic medical records searches for condition-eligible participants.",
+      "reason": "Eligibility criteria are partially described (adults with type 2 diabetes or hypertension in primary care practices within a low socio-economic area), but complete inclusion and explicit exclusion rules are not fully detailed in this paper."
+    },
+    "2": {
+      "decision": "0.5",
+      "evidence": "The simulation was informed by all of the data reported in the primary trial (n = 431); three participants were excluded due to death.",
+      "reason": "Attrition is partially reported (3 deaths excluded from 434 recruited participants), but complete participant flow and dropout counts across 4-month and 12-month assessments are not fully detailed."
+    },
+    "3": {
+      "decision": "0.0",
+      "evidence": "Participants were randomised to Telephone Counselling (n = 228) or Usual Care (n = 206)... three participants were excluded due to death.",
+      "reason": "Group-level attrition cannot be determined because the text does not specify which group the 3 deceased participants belonged to, nor does it provide per-group completer/loss counts across time points."
+    },
+    "4": {
+      "decision": "0.5",
+      "evidence": "systolic blood pressure and total serum cholesterol by imputing the age and sex-specific average values [30].",
+      "reason": "Mean/average imputation by age and sex is specified for missing risk factor data, but complete missing-data handling details for longitudinal primary outcomes are not fully described."
+    },
+    "5": {
+      "decision": "1.0",
+      "evidence": "A cluster-randomised trial of a telephone counselling intervention for physical activity and diet was conducted... Participants were randomised to Telephone Counselling (n = 228) or Usual Care (n = 206).",
+      "reason": " The study utilizes data from a trial where participants were explicitly randomly assigned to conditions (cluster-randomized trial)."
+    },
+    "6": {
+      "decision": "0.0",
+      "evidence": "Participants in the Telephone Counselling group received a 12-month intervention... Diet and physical activity outcomes of the trial were assessed using telephone interviews at baseline, 4-months and 12-months.",
+      "reason": "All empirical outcome measurements were taken during the 12-month intervention period; no post-intervention follow-up measurement was conducted after the intervention ended (subsequent years were projected via Markov modeling)."
+    },
+    "7": {
+      "decision": "0.5",
+      "evidence": "Diet and physical activity outcomes of the trial were assessed using telephone interviews at baseline, 4-months and 12-months.",
+      "reason": "Data collection occurred at baseline and two in-intervention occasions (4 and 12 months), with no post-intervention follow-up occasion after the 12-month program concluded."
+    },
+    "8": {
+      "decision": "0.0",
+      "evidence": "To obtain approval from an ethics committee and to reduce attrition, the Usual Care group received more than would typically have been made available under existing practice conditions... three telephone interviews of approximately 45–60 minutes duration each... feedback on their behaviour... off-the-shelf print materials",
+      "reason": "No valid procedural control categories (blinding/masking, matching/pairing, or explicit attention control) are present after applying standard exclusions."
+    },
+    "9": {
+      "decision": "0.5",
+      "evidence": "The participant use of health care services... collected by validated questionnaire [21]. The SF-36 health survey... mapped onto the SF-6D using a validated algorithm [23]. Validated instruments used in Australian population health surveys were employed [25–27].",
+      "reason": "Instrument validation and measurement properties are referenced exclusively from past literature; no internal sample reliability or validity coefficients are reported."
+    },
+    "10": {
+      "decision": "1.0",
+      "evidence": "Diet and physical activity were assessed relative to Australian guidelines: 150 minutes a week of accumulated moderate physical activity on five or more days per week [28]; at least five servings per day of vegetables; at least two daily servings of fruit; less than 30% of energy intake from total fat; less than 10% of energy intake from saturated fat and 30 grams or more of fibre per day [29].",
+      "reason": "Primary outcome constructs are defined conceptually (lifestyle behavior change for chronic disease prevention) and empirically via explicit operational guidelines and validated standard survey measures."
+    }
+  }
+}
+
+--- END OF ORDERED AUDIT ---
