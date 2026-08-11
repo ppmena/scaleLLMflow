@@ -20,7 +20,7 @@ scale <- "mqs"
 model <- "claude-sonnet-4-20250514"
 articles_dir <- Sys.getenv(
   "ARTICLES_DIR",
-  unset = file.path(package_dir, "examples", "01_mqs_free", "articles")
+  unset = file.path(example_dir, "articles")
 )
 
 cat("Available Claude models:\n")
