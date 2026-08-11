@@ -135,8 +135,8 @@ Then verify in R:
 ```r
 library(scaleLLMflow)
 available_scales()
-available_models("example")
-resolve_prompt("example", "gemini-3.6-flash")
+available_provider_models("gemini")
+resolve_prompt("example", "gemini-3.6-flash", provider = "gemini")
 ```
 
 Run at least one article with a distinct output directory and inspect:

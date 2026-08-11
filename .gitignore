@@ -9,4 +9,12 @@ developer/
 tmp/
 *.Rcheck/
 examples/**/results/
+help/*.aux
+help/*.idx
+help/*.ilg
+help/*.ind
+help/*.log
+help/*.out
+help/*.toc
+scaleLLMflow.pdf
 ^examples/.*/results(/.*)?$
