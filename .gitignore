@@ -16,5 +16,6 @@ help/*.ind
 help/*.log
 help/*.out
 help/*.toc
+help/scaleLLMflow_*.pdf
 scaleLLMflow.pdf
 ^examples/.*/results(/.*)?$

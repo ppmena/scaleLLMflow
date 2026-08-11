@@ -13,8 +13,9 @@
 \pagestyle{plain}
 
 \newcommand{\code}[1]{\texttt{\detokenize{#1}}}
-\newcommand{\function}[1]{\subsection*{\code{#1}}}
+\newcommand{\function}[1]{\subsection{\texttt{#1}}}
 \newcommand{\argitem}[2]{\item[\code{#1}] #2}
+\newcommand{\manualpart}[1]{\paragraph{#1}\mbox{}\\}
 
 \title{\textbf{scaleLLMflow}\\[4pt]\large General LLM Workflows for Scientific Quality Scales}
 \author{Proyecto MQS}
@@ -70,115 +71,115 @@ Claude credentials are read from \code{ANTHROPIC_API_KEY} or
 
 \section{Registry and scale helpers}
 
-\function{available_scales(registry_dir = NULL)}
-\subsection{Description}Lists scales available in the prompt registry.
-\subsection{Arguments}\begin{description}
+\function{available\_scales}
+\manualpart{Description}Lists scales available in the prompt registry.
+\manualpart{Arguments}\begin{description}
 \argitem{registry_dir}{Optional registry root. The bundled registry is used when omitted.}
 \end{description}
-\subsection{Value}A character vector of scale identifiers.
+\manualpart{Value}A character vector of scale identifiers.
 
-\function{available_provider_models(provider, api_key = NULL, timeout = 30, supported_only = TRUE)}
-\subsection{Description}Queries the provider's live model catalogue. This function
+\function{available\_provider\_models}
+\manualpart{Description}Queries the provider's live model catalogue. This function
 is independent of the scale registry and does not use hard-coded model lists.
-\subsection{Arguments}\begin{description}
+\manualpart{Arguments}\begin{description}
 \argitem{provider}{\code{gemini}, \code{openai}, \code{claude}, or an alias. The aliases \code{chatgpt} and \code{anthropic} are accepted where applicable.}
 \argitem{api_key}{Optional in-memory key. Otherwise the provider environment variables are used.}
 \argitem{timeout}{Request timeout in seconds.}
 \argitem{supported_only}{For Gemini, retain models supporting \code{generateContent}.}
 \end{description}
-\subsection{Value}A data frame with provider, model identifier, and display name.
+\manualpart{Value}A data frame with provider, model identifier, and display name.
 OpenAI uses \code{OPENAI_API_KEY}; Gemini uses \code{GEMINI_API_KEY} or
 \code{GOOGLE_GEMINI_KEY}; Claude uses \code{ANTHROPIC_API_KEY} or
 \code{CLAUDE_API_KEY}.
 
-\function{resolve_prompt(scale, model, provider = NULL, registry_dir = NULL)}
-\subsection{Description}Resolves the most appropriate registered prompt and its
+\function{resolve\_prompt}
+\manualpart{Description}Resolves the most appropriate registered prompt and its
 metadata. Matching proceeds from the exact model to family, numeric-version,
 provider-specific generic, generic, and nearest available fallbacks. The
 provider-specific fallback folders are named \code{claude-generic},
 \code{gemini-generic}, and \code{openai-generic}.
-\subsection{Arguments}\begin{description}
+\manualpart{Arguments}\begin{description}
 \argitem{scale}{Scale identifier.}\argitem{model}{Requested model identifier.}\argitem{provider}{Optional provider used to select its generic prompt.}\argitem{registry_dir}{Optional registry root.}
 \end{description}
-\subsection{Value}A resolved registry record containing prompt text, metadata,
+\manualpart{Value}A resolved registry record containing prompt text, metadata,
 scale definition, response schema, and provenance fields.
 
-\function{audit_model_registry(registry_dir = NULL, output_dir = NULL, apply_unifications = FALSE)}
-\subsection{Description}Checks every scale and model registry entry for required
+\function{audit\_model\_registry}
+\manualpart{Description}Checks every scale and model registry entry for required
 files, valid metadata, a complete item definition, a coherent response schema,
 and prompt hashes. Exact duplicate prompts are grouped and a unification plan is
 reported.
-\subsection{Arguments}\begin{description}
+\manualpart{Arguments}\begin{description}
 \argitem{registry_dir}{Optional registry root.}\argitem{output_dir}{Optional directory for audit CSV reports.}\argitem{apply_unifications}{If \code{TRUE}, moves redundant prompt folders to a timestamped backup after reporting the plan.}
 \end{description}
-\subsection{Value}An audit result with issue and success counts, duplicate groups,
+\manualpart{Value}An audit result with issue and success counts, duplicate groups,
 and proposed or applied unifications.
 
 \section{Prompt and text preparation}
 
-\function{build_scale_prompt(prompt_text, article_text)}
-\subsection{Description}Combines an operational scale prompt with the article text.
-\subsection{Arguments}\begin{description}
+\function{build\_scale\_prompt}
+\manualpart{Description}Combines an operational scale prompt with the article text.
+\manualpart{Arguments}\begin{description}
 \argitem{prompt_text}{Registered prompt text.}\argitem{article_text}{Article text to evaluate.}
 \end{description}
-\subsection{Value}The complete provider prompt as a character string.
+\manualpart{Value}The complete provider prompt as a character string.
 
-\function{extract_article_text(file_path, filetype = "auto", strip_references = TRUE)}
-\subsection{Description}Reads local Markdown or text articles and optionally removes
+\function{extract\_article\_text}
+\manualpart{Description}Reads local Markdown or text articles and optionally removes
 the references section. PDF input is supported through \code{extract_pdf_text}.
-\subsection{Arguments}\begin{description}
+\manualpart{Arguments}\begin{description}
 \argitem{file_path}{Local article path.}\argitem{filetype}{One of \code{auto}, \code{txt}, \code{md}, or \code{pdf}.}\argitem{strip_references}{Whether to remove references before model submission.}
 \end{description}
-\subsection{Value}Article text.
+\manualpart{Value}Article text.
 
-\function{extract_pdf_text(pdf_path, strip_references = TRUE)}
-\subsection{Description}Extracts text from a local PDF using \code{pdftools}.
-\subsection{Arguments}\begin{description}\argitem{pdf_path}{Local PDF path.}\argitem{strip_references}{Whether to remove references.}\end{description}
-\subsection{Value}Article text.
+\function{extract\_pdf\_text}
+\manualpart{Description}Extracts text from a local PDF using \code{pdftools}.
+\manualpart{Arguments}\begin{description}\argitem{pdf_path}{Local PDF path.}\argitem{strip_references}{Whether to remove references.}\end{description}
+\manualpart{Value}Article text.
 
-\function{strip_references_section(article_text)}
-\subsection{Description}Removes a detected references or bibliography section.
-\subsection{Value}Text with the trailing references section removed when detected.
+\function{strip\_references\_section}
+\manualpart{Description}Removes a detected references or bibliography section.
+\manualpart{Value}Text with the trailing references section removed when detected.
 
 \section{Parsing and provider calls}
 
-\function{parse_scale_scores(text, items = 1:10, metadata = NULL)}
-\subsection{Description}Validates and parses a strict JSON scale response. Fenced
+\function{parse\_scale\_scores}
+\manualpart{Description}Validates and parses a strict JSON scale response. Fenced
 JSON is normalized in a controlled way before validation. The registered metadata
 defines required items, allowed values, excluded items, and total-score rules.
-\subsection{Arguments}\begin{description}
+\manualpart{Arguments}\begin{description}
 \argitem{text}{Raw model response.}\argitem{items}{Expected item identifiers.}\argitem{metadata}{Optional resolved metadata and JSON Schema.}
 \end{description}
-\subsection{Value}A named numeric vector of item scores. When metadata is supplied,
+\manualpart{Value}A named numeric vector of item scores. When metadata is supplied,
 the response is validated against its declared schema before scores are returned.
 
-\function{run_llm(prompt, provider = "gemini", model = "gemini-3.6-flash", temperature = 0, top_p = 0.1, timeout = 300, api_key = NULL, project_id = NULL, max_retries = 3, retry_wait_seconds = 1, retry_backoff = 2, rate_limit_seconds = 0)}
-\subsection{Description}Calls Gemini through the Interactions API, OpenAI
+\function{run\_llm}
+\manualpart{Description}Calls Gemini through the Interactions API, OpenAI
 through the Responses API, or Claude through Anthropic's Messages API. It applies rate limiting, retries transient failures
 with exponential backoff, records detailed errors, and returns the raw response
 needed for auditability.
-\subsection{Arguments}\begin{description}
+\manualpart{Arguments}\begin{description}
 \argitem{prompt}{Prompt sent to the provider.}\argitem{provider}{\code{gemini}, \code{openai}, \code{chatgpt}, \code{claude}, or \code{anthropic}.}\argitem{model}{Provider model identifier.}\argitem{temperature}{Sampling temperature; zero is recommended for reproducibility.}\argitem{top_p}{Gemini nucleus sampling parameter; ignored by OpenAI and Claude.}\argitem{timeout}{Timeout per attempt, in seconds.}\argitem{api_key}{Optional in-memory API key.}\argitem{project_id}{Optional OpenAI project id.}\argitem{max_retries}{Maximum transient-failure retries.}\argitem{retry_wait_seconds}{Initial retry delay.}\argitem{retry_backoff}{Retry-delay multiplier.}\argitem{rate_limit_seconds}{Minimum delay between requests in the current R process.}
 \end{description}
-\subsection{Value}A provider response object containing text, request metadata,
+\manualpart{Value}A provider response object containing text, request metadata,
 model and parameter provenance, hashes, input size, and error details when relevant.
 
 \section{Article and dataset workflows}
 
-\function{run_article(...)}
-\subsection{Description}Runs one local article through a registered scale prompt.
+\function{run\_article}
+\manualpart{Description}Runs one local article through a registered scale prompt.
 It writes raw audit output plus convenient score and evidence CSV files.
-\subsection{Important arguments}\begin{description}
+\manualpart{Important arguments}\begin{description}
 \argitem{article_path}{Local article file.}\argitem{scale}{Scale identifier.}\argitem{provider}{Provider identifier.}\argitem{model}{Model identifier.}\argitem{output_dir}{Output directory.}\argitem{reference_scores}{Named reviewed scores; activates reference validation.}\argitem{validation_mode}{\code{free} or \code{reference}.}\argitem{temperature, top_p, timeout}{Provider parameters.}\argitem{max_retries, retry_wait_seconds, retry_backoff, rate_limit_seconds}{Reliability controls.}
 \end{description}
-\subsection{Value}A result containing parsed scores, totals, evidence, reasons,
+\manualpart{Value}A result containing parsed scores, totals, evidence, reasons,
 validation comparisons, provenance, and output paths.
 
-\function{run_dataset(...)}
-\subsection{Description}Processes all supported local articles in a directory and
+\function{run\_dataset}
+\manualpart{Description}Processes all supported local articles in a directory and
 consolidates scores, evidence, audit information, and errors. A semicolon-separated
 reference CSV with \code{ID} and item columns activates dataset reference mode.
-\subsection{Value}A dataset result with per-article records and consolidated output paths.
+\manualpart{Value}A dataset result with per-article records and consolidated output paths.
 
 \section{Bundled scales and registry layout}
 The bundled registry currently contains the MQS and PEDro scales. Each provider
