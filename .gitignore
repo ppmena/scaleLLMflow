@@ -6,4 +6,7 @@
 .Renviron
 resultados/
 developer/
+tmp/
+*.Rcheck/
+examples/**/results/
 ^examples/.*/results(/.*)?$

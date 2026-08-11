@@ -5,3 +5,8 @@
 ^.*\.tar\.gz$
 ^.*\.Rproj$
 ^\.Rproj\.user$
+^tmp$
+^developer$
+^examples/.*/results$
+^\.RData$
+^\.Rhistory$
