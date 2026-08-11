@@ -4,12 +4,15 @@
 \alias{resolve_prompt}
 \title{Resolve the best prompt registered for a scale and requested model.}
 \usage{
-resolve_prompt(scale, model, registry_dir = NULL)
+resolve_prompt(scale, model, provider = NULL, registry_dir = NULL)
 }
 \arguments{
 \item{scale}{Scale name, for example \code{"mqs"}.}
 
 \item{model}{Requested model name.}
+
+\item{provider}{Optional provider. When supplied, \verb{<provider>-generic} is
+preferred after model-specific matching.}
 
 \item{registry_dir}{Optional registry root. Defaults to bundled package prompts.}
 }

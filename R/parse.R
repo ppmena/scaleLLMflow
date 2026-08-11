@@ -257,6 +257,7 @@ json_item_score <- function(item_number, response, metadata) {
 #'
 #' @param text LLM response text.
 #' @param items Numeric item ids to parse. Defaults to 1:10.
+#' @param metadata Optional resolved scale metadata.
 #' @export
 parse_scale_scores <- function(text, items = 1:10, metadata = NULL) {
   if (!is.null(metadata) && !is.null(metadata$response_schema) &&

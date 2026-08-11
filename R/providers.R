@@ -3,6 +3,9 @@ provider_alias <- function(provider) {
   if (provider == "chatgpt") {
     return("openai")
   }
+  if (provider %in% c("anthropic", "claude")) {
+    return("claude")
+  }
   provider
 }
 
@@ -209,6 +212,39 @@ call_openai <- function(prompt, model, temperature = 0, timeout = 300, api_key =
   result
 }
 
+call_claude <- function(prompt, model, temperature = 0, timeout = 300,
+                        api_key = NULL, response_schema = NULL) {
+  if (is.null(api_key) || !nzchar(api_key)) {
+    api_key <- get_required_env(c("ANTHROPIC_API_KEY", "CLAUDE_API_KEY"))
+  }
+
+  # Anthropic Messages API. The scale prompt requires strict JSON and the
+  # parser validates the response against the registered scale schema.
+  body <- list(
+    model = model,
+    max_tokens = 8192,
+    temperature = temperature,
+    messages = list(list(role = "user", content = prompt))
+  )
+
+  resp <- httr2::request("https://api.anthropic.com/v1/messages") |>
+    httr2::req_headers(
+      `x-api-key` = api_key,
+      `anthropic-version` = "2023-06-01"
+    ) |>
+    httr2::req_body_json(body, auto_unbox = TRUE) |>
+    httr2::req_options(timeout = timeout) |>
+    httr2::req_perform()
+
+  parsed <- httr2::resp_body_json(resp, simplifyVector = FALSE)
+  text <- unlist(lapply(parsed$content %||% list(), function(content) {
+    if (identical(content$type, "text")) content$text %||% "" else ""
+  }), use.names = FALSE)
+  result <- paste(text[nzchar(text)], collapse = "\n")
+  if (!nzchar(result)) stop("Claude response did not contain readable output text.", call. = FALSE)
+  result
+}
+
 `%||%` <- function(x, y) {
   if (is.null(x)) y else x
 }
@@ -216,7 +252,7 @@ call_openai <- function(prompt, model, temperature = 0, timeout = 300, api_key =
 #' Call a supported LLM provider with user-owned API credentials.
 #'
 #' @param prompt Prompt text to send.
-#' @param provider `"gemini"`, `"openai"`, or `"chatgpt"`.
+#' @param provider `"gemini"`, `"openai"`, `"chatgpt"`, `"claude"`, or `"anthropic"`.
 #' @param model Model id.
 #' @param temperature Sampling temperature.
 #' @param top_p Gemini nucleus-sampling value; ignored by the OpenAI integration.
@@ -225,6 +261,9 @@ call_openai <- function(prompt, model, temperature = 0, timeout = 300, api_key =
 #' @param retry_wait_seconds Initial exponential-backoff delay.
 #' @param retry_backoff Multiplicative exponential-backoff factor.
 #' @param rate_limit_seconds Minimum delay between requests in this R process.
+#' @param api_key Optional in-memory API key.
+#' @param project_id Optional OpenAI project id.
+#' @param response_schema Optional registered response schema.
 #' @export
 run_llm <- function(prompt, provider = "gemini", model = "gemini-3.6-flash",
                     temperature = 0, top_p = 0.1, timeout = 300,
@@ -240,6 +279,11 @@ run_llm <- function(prompt, provider = "gemini", model = "gemini-3.6-flash",
 
   if (provider == "openai") {
     return(with_retries(function() call_openai(prompt, model, temperature, timeout, api_key, project_id, response_schema),
+      provider, model, max_retries, retry_wait_seconds, retry_backoff, rate_limit_seconds))
+  }
+
+  if (provider == "claude") {
+    return(with_retries(function() call_claude(prompt, model, temperature, timeout, api_key, response_schema),
       provider, model, max_retries, retry_wait_seconds, retry_backoff, rate_limit_seconds))
   }
 

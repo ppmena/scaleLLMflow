@@ -139,6 +139,11 @@ build_audit_log <- function(clean_id, provider, model, strip_references, call_lo
 #' @param output_dir Optional output directory for an audit log.
 #' @param write_evidence Whether to write the per-article evidence CSV. Dataset
 #' workflows set this to `FALSE` because they write one consolidated report.
+#' @param temperature,top_p,timeout,api_key,project_id Provider call settings.
+#' @param pdf_path Backward-compatible alias for `article_path`.
+#' @param max_retries,retry_wait_seconds,retry_backoff,rate_limit_seconds Reliability settings.
+#' @param reference_scores Optional reviewed scores for reference validation.
+#' @param validation_mode Either `"free"` or `"reference"`.
 #' @export
 run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini", model = "gemini-3.6-flash",
                         registry_dir = NULL, filetype = "auto", strip_references = TRUE, items = NULL,
@@ -157,7 +162,7 @@ run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini",
   validation_mode <- match.arg(validation_mode)
   if (!is.null(reference_scores)) validation_mode <- "reference"
 
-  resolved <- resolve_prompt(scale, model, registry_dir = registry_dir)
+  resolved <- resolve_prompt(scale, model, provider = provider, registry_dir = registry_dir)
   prompt_text <- paste(readLines(resolved$prompt_path, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
   article_text <- extract_article_text(article_path, filetype = filetype, strip_references = strip_references)
 
@@ -212,7 +217,7 @@ run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini",
   if (validation_mode == "reference") {
     if (is.null(reference_scores)) stop("reference_scores is required in reference mode.", call. = FALSE)
     validation <- compare_reference_scores(parse_scale_scores(raw_response, items = items, metadata = resolved$metadata), reference_scores, items)
-    validation <- paste(capture.output(print(validation, row.names = FALSE)), collapse = "\n")
+    validation <- paste(utils::capture.output(print(validation, row.names = FALSE)), collapse = "\n")
   }
   clean_id <- clean_article_id(article_path)
   audit_log <- build_audit_log(
@@ -268,6 +273,14 @@ run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini",
 #' @param articles_dir Directory containing articles.
 #' @param filetype One of `"auto"`, `"pdf"`, `"txt"`, or `"md"`.
 #' @param output_dir Directory where audit logs and CSV are written.
+#' @param scale Scale name.
+#' @param provider LLM provider.
+#' @param model Requested model.
+#' @param registry_dir Optional prompt registry root.
+#' @param strip_references,items,temperature,top_p,timeout,api_key,project_id Provider and parsing settings.
+#' @param max_retries,retry_wait_seconds,retry_backoff,rate_limit_seconds Reliability settings.
+#' @param reference_csv Optional reviewed-score CSV.
+#' @param validation_mode Either `"free"` or `"reference"`.
 #' @param max_articles Maximum pending PDFs to process. `0` means all.
 #' @return A list containing the timestamped run directory, consensus report,
 #' consolidated evidence report, and errors when any occurred.
@@ -311,7 +324,7 @@ run_dataset <- function(articles_dir, scale = "mqs", provider = "gemini", model 
   dir.create(run_dir, recursive = TRUE)
   output_dir <- run_dir
 
-  resolved <- resolve_prompt(scale, model, registry_dir = registry_dir)
+  resolved <- resolve_prompt(scale, model, provider = provider, registry_dir = registry_dir)
   prompt_text <- paste(readLines(resolved$prompt_path, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
   write_prompt_snapshot(output_dir, prompt_text, resolved)
 

@@ -10,6 +10,8 @@ parse_scale_scores(text, items = 1:10, metadata = NULL)
 \item{text}{LLM response text.}
 
 \item{items}{Numeric item ids to parse. Defaults to 1:10.}
+
+\item{metadata}{Optional resolved scale metadata.}
 }
 \description{
 Parse scale item scores from an LLM response.

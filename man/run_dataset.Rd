@@ -31,11 +31,27 @@ run_dataset(
 \arguments{
 \item{articles_dir}{Directory containing articles.}
 
+\item{scale}{Scale name.}
+
+\item{provider}{LLM provider.}
+
+\item{model}{Requested model.}
+
 \item{output_dir}{Directory where audit logs and CSV are written.}
+
+\item{registry_dir}{Optional prompt registry root.}
 
 \item{filetype}{One of \code{"auto"}, \code{"pdf"}, \code{"txt"}, or \code{"md"}.}
 
+\item{strip_references, items, temperature, top_p, timeout, api_key, project_id}{Provider and parsing settings.}
+
 \item{max_articles}{Maximum pending PDFs to process. \code{0} means all.}
+
+\item{max_retries, retry_wait_seconds, retry_backoff, rate_limit_seconds}{Reliability settings.}
+
+\item{reference_csv}{Optional reviewed-score CSV.}
+
+\item{validation_mode}{Either \code{"free"} or \code{"reference"}.}
 }
 \value{
 A list containing the timestamped run directory, consensus report,

@@ -27,9 +27,12 @@ meaning, item order, and response encoding.
 
 ## Required implementation
 
-Create one directory per scale and one directory per model prompt:
+Create provider-generic directories for every scale, plus optional
+model-specific directories when a prompt has been tuned or validated for a
+particular model:
 
 ```text
+library/scaleLLMflow/inst/scales/<scale_name>/<provider>-generic/
 library/scaleLLMflow/inst/scales/<scale_name>/<model_name>/
   prompt.md
   metadata.json

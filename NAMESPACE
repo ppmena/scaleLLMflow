@@ -2,6 +2,7 @@
 
 export(audit_model_registry)
 export(available_models)
+export(available_provider_models)
 export(available_scales)
 export(build_scale_prompt)
 export(extract_article_text)

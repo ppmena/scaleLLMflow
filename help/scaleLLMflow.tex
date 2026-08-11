@@ -64,6 +64,8 @@ Gemini credentials are read from \code{GEMINI_API_KEY} or \code{GOOGLE_GEMINI_KE
 OpenAI credentials are read from \code{OPENAI_API_KEY}; \code{OPENAI_PROJECT_ID}
 may also be supplied. A project-level \code{.Renviron} file is convenient for
 interactive work in RStudio and should not be committed.
+Claude credentials are read from \code{ANTHROPIC_API_KEY} or
+\code{CLAUDE_API_KEY}.
 
 \section{Registry and scale helpers}
 
@@ -142,8 +144,8 @@ defines required items, allowed values, excluded items, and total-score rules.
 evidence, reasons, and the raw response.
 
 \function{run_llm(prompt, provider = "gemini", model = "gemini-3.6-flash", temperature = 0, top_p = 0.1, timeout = 300, api_key = NULL, project_id = NULL, max_retries = 3, retry_wait_seconds = 1, retry_backoff = 2, rate_limit_seconds = 0)}
-\subsection{Description}Calls Gemini through the Interactions API or OpenAI
-through the Responses API. It applies rate limiting, retries transient failures
+\subsection{Description}Calls Gemini through the Interactions API, OpenAI
+through the Responses API, or Claude through Anthropic's Messages API. It applies rate limiting, retries transient failures
 with exponential backoff, records detailed errors, and returns the raw response
 needed for auditability.
 \subsection{Arguments}\begin{description}

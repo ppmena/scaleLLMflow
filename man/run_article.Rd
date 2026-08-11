@@ -48,6 +48,16 @@ run_article(
 
 \item{output_dir}{Optional output directory for an audit log.}
 
+\item{temperature, top_p, timeout, api_key, project_id}{Provider call settings.}
+
+\item{pdf_path}{Backward-compatible alias for \code{article_path}.}
+
+\item{max_retries, retry_wait_seconds, retry_backoff, rate_limit_seconds}{Reliability settings.}
+
+\item{reference_scores}{Optional reviewed scores for reference validation.}
+
+\item{validation_mode}{Either \code{"free"} or \code{"reference"}.}
+
 \item{write_evidence}{Whether to write the per-article evidence CSV. Dataset
 workflows set this to \code{FALSE} because they write one consolidated report.}
 }

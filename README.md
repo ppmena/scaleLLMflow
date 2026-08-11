@@ -30,6 +30,7 @@ API key in memory for a single call:
 - Gemini: `GEMINI_API_KEY` or `GOOGLE_GEMINI_KEY`
 - OpenAI: `OPENAI_API_KEY`
 - Optional OpenAI project: `OPENAI_PROJECT_ID`
+- Claude/Anthropic: `ANTHROPIC_API_KEY` or `CLAUDE_API_KEY`
 
 ## Quick start
 
@@ -74,8 +75,11 @@ Provider integrations are selected explicitly with `provider` and `model`.
 The provider API determines which model identifiers are available; the prompt
 registry does not attempt to maintain a static list of every available model.
 
-Supported provider values are `gemini` and `openai` (with `chatgpt` accepted as
-an alias where applicable). API requests use the credentials described above.
+Supported provider values are `gemini`, `openai`, and `claude` (with `chatgpt`
+as an OpenAI alias and `anthropic` as a Claude alias). Claude uses Anthropic's
+Messages API. The bundled MQS and PEDro Claude entries use the model identifier
+`claude-sonnet-4-20250514`; another Claude model can be passed and will use the
+corresponding scale fallback prompt.
 
 Prompt selection is independent of model availability. The resolver looks for
 an exact registered model and then applies its fallback rules, ending with the
@@ -100,6 +104,19 @@ result <- run_article(
 
 For reproducible scoring, use a low temperature and record the prompt,
 provider, model, and runtime settings in the audit output.
+
+To inspect the models currently exposed by a provider, independently of any
+scale, use:
+
+```r
+available_provider_models("gemini")
+available_provider_models("openai")
+available_provider_models("claude")
+```
+
+This function queries each provider's models endpoint and therefore requires
+the corresponding API key. It is intentionally not hard-coded, because the
+available model catalogue changes over time.
 
 ## Scales and prompt registry
 

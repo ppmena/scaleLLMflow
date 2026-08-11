@@ -23,7 +23,7 @@ run_llm(
 \arguments{
 \item{prompt}{Prompt text to send.}
 
-\item{provider}{\code{"gemini"}, \code{"openai"}, or \code{"chatgpt"}.}
+\item{provider}{\code{"gemini"}, \code{"openai"}, \code{"chatgpt"}, \code{"claude"}, or \code{"anthropic"}.}
 
 \item{model}{Model id.}
 
@@ -33,6 +33,10 @@ run_llm(
 
 \item{timeout}{Maximum duration in seconds for each individual API attempt.}
 
+\item{api_key}{Optional in-memory API key.}
+
+\item{project_id}{Optional OpenAI project id.}
+
 \item{max_retries}{Maximum retries for transient failures.}
 
 \item{retry_wait_seconds}{Initial exponential-backoff delay.}
@@ -40,6 +44,8 @@ run_llm(
 \item{retry_backoff}{Multiplicative exponential-backoff factor.}
 
 \item{rate_limit_seconds}{Minimum delay between requests in this R process.}
+
+\item{response_schema}{Optional registered response schema.}
 }
 \description{
 Call a supported LLM provider with user-owned API credentials.

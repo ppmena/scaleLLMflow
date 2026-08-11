@@ -66,10 +66,12 @@ available_models <- function(scale, registry_dir = NULL) {
 #'
 #' @param scale Scale name, for example `"mqs"`.
 #' @param model Requested model name.
+#' @param provider Optional provider. When supplied, `<provider>-generic` is
+#'   preferred after model-specific matching.
 #' @param registry_dir Optional registry root. Defaults to bundled package prompts.
 #' @return A list containing prompt path, model folder, match strategy, and metadata.
 #' @export
-resolve_prompt <- function(scale, model, registry_dir = NULL) {
+resolve_prompt <- function(scale, model, provider = NULL, registry_dir = NULL) {
   root <- registry_root(registry_dir)
   scale_name <- tolower(scale)
   scale_dir <- file.path(root, scale_name)
@@ -132,6 +134,13 @@ resolve_prompt <- function(scale, model, registry_dir = NULL) {
   }
 
   generic_idx <- which(normalize_model_name(available) == "generic")
+  if (!is.null(provider)) {
+    provider_generic <- paste0(normalize_model_name(provider_alias(provider)), "-generic")
+    provider_idx <- which(normalize_model_name(available) == provider_generic)
+    if (length(provider_idx) > 0) {
+      return(choose(available[[provider_idx[[1]]]], paste0("provider:", provider_alias(provider))))
+    }
+  }
   if (length(generic_idx) > 0) {
     return(choose(available[[generic_idx[[1]]]], "generic"))
   }
