@@ -15,8 +15,9 @@ if (!nzchar(Sys.getenv("ANTHROPIC_API_KEY", unset = "")) &&
   stop("Configure ANTHROPIC_API_KEY or CLAUDE_API_KEY before running this example.", call. = FALSE)
 }
 
-scale <- Sys.getenv("SCALE", unset = "mqs")
-model <- Sys.getenv("CLAUDE_MODEL", unset = "claude-sonnet-4-20250514")
+# Select the scale and Claude model explicitly in this example.
+scale <- "mqs"
+model <- "claude-sonnet-4-20250514"
 articles_dir <- Sys.getenv(
   "ARTICLES_DIR",
   unset = file.path(package_dir, "examples", "01_mqs_free", "articles")

@@ -17,12 +17,11 @@ $env:R_ENVIRON_USER = (Join-Path (Get-Location) ".Renviron")
 Rscript examples/03_pedro_free/run.R
 ```
 
-For Claude, configure the API key first and optionally choose the scale/model:
+For Claude, configure the API key first. The scale and model are defined
+explicitly inside `examples/05_claude_free/run.R`:
 
 ```powershell
 $env:ANTHROPIC_API_KEY = "your-key"
-$env:SCALE = "mqs"
-$env:CLAUDE_MODEL = "claude-sonnet-4-20250514"
 Rscript examples/05_claude_free/run.R
 ```
 
