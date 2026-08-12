@@ -149,6 +149,72 @@ audit$checks
 
 To add a scale, see [ADD_NEW_SCALE_SKILL.md](ADD_NEW_SCALE_SKILL.md).
 
+### Private scales in a local research project
+
+You can use a private scale without editing the installed package, opening a
+pull request, or publishing the prompt. Store the scale registry in a separate
+project directory and pass it through `registry_dir`:
+
+```text
+my-study/
+  scales/
+    my_scale/
+      gemini-generic/
+        prompt.md
+        metadata.json
+```
+
+The folder name is the scale name. Each prompt variant must contain both
+`prompt.md` and `metadata.json`, following the contract in
+`ADD_NEW_SCALE_SKILL.md`. The same external registry can be used with
+`available_scales()`, `resolve_prompt()`, `run_article()`, and `run_dataset()`:
+
+```r
+library(scaleLLMflow)
+
+my_registry <- "my-study/scales"
+
+available_scales(my_registry)
+resolve_prompt(
+  scale = "my_scale",
+  model = "gemini-3.6-flash",
+  provider = "gemini",
+  registry_dir = my_registry
+)
+
+result <- run_article(
+  article_path = "my-study/articles/article.pdf",
+  scale = "my_scale",
+  provider = "gemini",
+  model = "gemini-3.6-flash",
+  registry_dir = my_registry
+)
+```
+
+Before running articles, validate the local registry:
+
+```r
+audit <- audit_model_registry(
+  registry_dir = my_registry,
+  output_dir = "my-study/registry-audit"
+)
+
+audit$checks
+subset(audit$checks, Status == "ERROR")
+```
+
+The audit checks the local file layout, metadata JSON, scale definition, total
+score contract, response schema, and duplicate prompts. It does not determine
+whether the scientific interpretation of a prompt is valid or whether a model
+produces accurate ratings. Those require pilot articles and, preferably,
+reference scores using `validation_mode = "reference"`.
+
+This workflow keeps the prompt, scale definition, articles, and results under
+the researcher's control. It does not make model execution local: the bundled
+providers still send article text to Gemini, OpenAI, or Claude. Fully local
+execution with Ollama, LM Studio, or another local model requires an additional
+provider integration.
+
 ## Validation modes
 
 Free mode evaluates a document without reference scores:

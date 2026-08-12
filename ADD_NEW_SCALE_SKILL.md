@@ -95,6 +95,30 @@ items such as PEDro item 1, which is coded but excluded from the official score.
 Never change the default model `gemini-3.6-flash` unless the task explicitly
 requires a different test. Never store API keys in the library.
 
+## Private local registries without a package update
+
+A researcher does not need to modify the installed package or contribute the
+scale through GitHub. Create the same `inst/scales/<scale>/<prompt_variant>/`
+layout in a separate project directory and pass its parent directory as
+`registry_dir` to `available_scales()`, `resolve_prompt()`, `run_article()`,
+and `run_dataset()`.
+
+Validate the private registry before use:
+
+```r
+audit <- audit_model_registry(
+  registry_dir = "my-study/scales",
+  output_dir = "my-study/registry-audit"
+)
+subset(audit$checks, Status == "ERROR")
+```
+
+An empty result means that no structural errors were reported. Review any
+warnings and run pilot documents with reference scores before treating the
+scale as scientifically validated. This local registry feature controls where
+prompts and scale metadata are read from; it does not provide local model
+inference. The standard providers still use their configured APIs.
+
 ## Parser and workflow contract
 
 The shared workflow in `R/workflow.R` handles PDF/text extraction, prompt
