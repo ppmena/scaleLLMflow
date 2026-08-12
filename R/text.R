@@ -56,9 +56,9 @@ structure_article_markdown <- function(article_text, tables_advanced = TRUE) {
       label <- if (grepl(heading, x, perl=TRUE)) sub(heading, "\\1", x, perl=TRUE) else x
       out <- c(out, paste0("## ", label))
     } else if (grepl(bullet, x, perl=TRUE)) out <- c(out, paste0("- ", sub(bullet, "\\1", x, perl=TRUE)))
-    else if (isTRUE(tables_advanced) && i < length(lines) && grepl("[[:space:]]{2,}|\\t", x) && grepl("[[:space:]]{2,}|\\t", lines[[i+1L]])) {
+    else if (isTRUE(tables_advanced) && i < length(lines) && (grepl("  ", x, fixed=TRUE) || grepl("\\t", x, fixed=TRUE)) && (grepl("  ", lines[[i+1L]], fixed=TRUE) || grepl("\\t", lines[[i+1L]], fixed=TRUE))) {
       block <- character(0)
-      while (i <= length(lines) && grepl("[[:space:]]{2,}|\\t", lines[[i]])) { block <- c(block, lines[[i]]); i <- i + 1L }
+      while (i <= length(lines) && (grepl("  ", lines[[i]], fixed=TRUE) || grepl("\\t", lines[[i]], fixed=TRUE))) { block <- c(block, lines[[i]]); i <- i + 1L }
       rows <- lapply(block, function(z) trimws(strsplit(z, "(?:\\t|\\s{2,})", perl=TRUE)[[1]]))
       width <- max(lengths(rows)); rows <- lapply(rows, function(z) c(z, rep("", width-length(z))))
       out <- c(out, paste0("| ", paste(rows[[1]], collapse=" | "), " |"), paste0("| ", paste(rep("---", width), collapse=" | "), " |"), vapply(rows[-1], function(z) paste0("| ", paste(z, collapse=" | "), " |"), character(1)))
