@@ -38,12 +38,43 @@ strip_references_section <- function(article_text) {
   stripped_text
 }
 
+#' Convert extracted text to Markdown headings, lists, and tables.
+#' @param article_text Extracted article text.
+#' @param tables_advanced Whether to convert table-like blocks.
+#' @export
+structure_article_markdown <- function(article_text, tables_advanced = TRUE) {
+  if (!is.logical(tables_advanced) || length(tables_advanced) != 1) stop("tables_advanced must be TRUE or FALSE.", call. = FALSE)
+  lines <- trimws(gsub("\\r\\n?", "\\n", article_text))
+  lines <- lines[nzchar(lines)]
+  out <- character(0); i <- 1L
+  heading <- "^(?:[0-9]+(?:\\.[0-9]+)*[.)]?|[IVXLC]+[.)])\\s+(.+)$"
+  bullet <- "^(?:[-*•]|[0-9]+[.)])\\s+(.+)$"
+  while (i <= length(lines)) {
+    x <- lines[[i]]
+    if (grepl("^#{1,6}\\s", x)) out <- c(out, x)
+    else if (grepl("^[A-Z][A-Z0-9 ,:;()&/-]{3,}$", x) || grepl(heading, x, perl=TRUE)) {
+      label <- if (grepl(heading, x, perl=TRUE)) sub(heading, "\\1", x, perl=TRUE) else x
+      out <- c(out, paste0("## ", label))
+    } else if (grepl(bullet, x, perl=TRUE)) out <- c(out, paste0("- ", sub(bullet, "\\1", x, perl=TRUE)))
+    else if (isTRUE(tables_advanced) && i < length(lines) && grepl("[[:space:]]{2,}|\\t", x) && grepl("[[:space:]]{2,}|\\t", lines[[i+1L]])) {
+      block <- character(0)
+      while (i <= length(lines) && grepl("[[:space:]]{2,}|\\t", lines[[i]])) { block <- c(block, lines[[i]]); i <- i + 1L }
+      rows <- lapply(block, function(z) trimws(strsplit(z, "(?:\\t|\\s{2,})", perl=TRUE)[[1]]))
+      width <- max(lengths(rows)); rows <- lapply(rows, function(z) c(z, rep("", width-length(z))))
+      out <- c(out, paste0("| ", paste(rows[[1]], collapse=" | "), " |"), paste0("| ", paste(rep("---", width), collapse=" | "), " |"), vapply(rows[-1], function(z) paste0("| ", paste(z, collapse=" | "), " |"), character(1)))
+      next
+    } else out <- c(out, x)
+    i <- i + 1L
+  }
+  paste(out, collapse="\n\n")
+}
+
 #' Extract text from a PDF article.
 #'
 #' @param pdf_path Path to a PDF article.
 #' @param strip_references Whether to remove the reference section before sending text to an LLM.
 #' @export
-extract_pdf_text <- function(pdf_path, strip_references = TRUE) {
+extract_pdf_text <- function(pdf_path, strip_references = TRUE, tables_advanced = TRUE) {
   if (!file.exists(pdf_path)) {
     stop("PDF not found: ", pdf_path, call. = FALSE)
   }
@@ -53,7 +84,7 @@ extract_pdf_text <- function(pdf_path, strip_references = TRUE) {
     article_text <- strip_references_section(article_text)
   }
 
-  article_text
+  structure_article_markdown(article_text, tables_advanced = tables_advanced)
 }
 
 #' Extract text from a supported article file.
@@ -64,7 +95,7 @@ extract_pdf_text <- function(pdf_path, strip_references = TRUE) {
 #' @details Files are read from the local filesystem. PDF, TXT, and Markdown
 #' inputs are supported.
 #' @export
-extract_article_text <- function(file_path, filetype = "auto", strip_references = TRUE) {
+extract_article_text <- function(file_path, filetype = "auto", strip_references = TRUE, tables_advanced = TRUE) {
   if (!file.exists(file_path)) {
     stop("Article file not found: ", file_path, call. = FALSE)
   }
@@ -78,7 +109,7 @@ extract_article_text <- function(file_path, filetype = "auto", strip_references 
   }
 
   if (filetype == "pdf") {
-    return(extract_pdf_text(file_path, strip_references = strip_references))
+    return(extract_pdf_text(file_path, strip_references = strip_references, tables_advanced = tables_advanced))
   }
 
   article_text <- paste(readLines(file_path, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
@@ -86,7 +117,7 @@ extract_article_text <- function(file_path, filetype = "auto", strip_references 
     article_text <- strip_references_section(article_text)
   }
 
-  article_text
+  structure_article_markdown(article_text, tables_advanced = tables_advanced)
 }
 
 validate_filetype <- function(filetype) {

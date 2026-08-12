@@ -4,7 +4,7 @@
 \alias{extract_pdf_text}
 \title{Extract text from a PDF article.}
 \usage{
-extract_pdf_text(pdf_path, strip_references = TRUE)
+extract_pdf_text(pdf_path, strip_references = TRUE, tables_advanced = TRUE)
 }
 \arguments{
 \item{pdf_path}{Path to a PDF article.}

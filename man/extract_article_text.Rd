@@ -4,7 +4,12 @@
 \alias{extract_article_text}
 \title{Extract text from a supported article file.}
 \usage{
-extract_article_text(file_path, filetype = "auto", strip_references = TRUE)
+extract_article_text(
+  file_path,
+  filetype = "auto",
+  strip_references = TRUE,
+  tables_advanced = TRUE
+)
 }
 \arguments{
 \item{file_path}{Path to a \code{.pdf}, \code{.txt}, or \code{.md} article file.}

@@ -122,6 +122,13 @@ available model catalogue changes over time.
 
 Registered scales live under `inst/scales`:
 
+Article text is converted to Markdown before it is appended to the scale
+prompt. Headings, bullet points, and conservative whitespace-separated table
+blocks are preserved as Markdown structures. This behaviour is controlled by
+`tables_advanced`, which defaults to `TRUE` in `extract_article_text()`,
+`run_article()`, and `run_dataset()`. Set it to `FALSE` to send extracted text
+without this structuring pass.
+
 ```text
 inst/scales/<scale>/<prompt_variant>/
   prompt.md

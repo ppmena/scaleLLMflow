@@ -12,6 +12,7 @@ run_article(
   registry_dir = NULL,
   filetype = "auto",
   strip_references = TRUE,
+  tables_advanced = TRUE,
   items = NULL,
   output_dir = NULL,
   temperature = 0,

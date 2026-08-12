@@ -146,7 +146,7 @@ build_audit_log <- function(clean_id, provider, model, strip_references, call_lo
 #' @param validation_mode Either `"free"` or `"reference"`.
 #' @export
 run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini", model = "gemini-3.6-flash",
-                        registry_dir = NULL, filetype = "auto", strip_references = TRUE, items = NULL,
+                        registry_dir = NULL, filetype = "auto", strip_references = TRUE, tables_advanced = TRUE, items = NULL,
                         output_dir = NULL, temperature = 0, top_p = 0.1, timeout = 300,
                         api_key = NULL, project_id = NULL, pdf_path = NULL,
                         max_retries = 3, retry_wait_seconds = 1, retry_backoff = 2,
@@ -164,7 +164,7 @@ run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini",
 
   resolved <- resolve_prompt(scale, model, provider = provider, registry_dir = registry_dir)
   prompt_text <- paste(readLines(resolved$prompt_path, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
-  article_text <- extract_article_text(article_path, filetype = filetype, strip_references = strip_references)
+  article_text <- extract_article_text(article_path, filetype = filetype, strip_references = strip_references, tables_advanced = tables_advanced)
 
   if (nchar(trimws(article_text)) < 100) {
     stop("Article without sufficient extractable text: ", article_path, call. = FALSE)
@@ -286,7 +286,7 @@ run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini",
 #' consolidated evidence report, and errors when any occurred.
 #' @export
 run_dataset <- function(articles_dir, scale = "mqs", provider = "gemini", model = "gemini-3.6-flash",
-                        output_dir, registry_dir = NULL, filetype = "auto", strip_references = TRUE, max_articles = 0,
+                        output_dir, registry_dir = NULL, filetype = "auto", strip_references = TRUE, tables_advanced = TRUE, max_articles = 0,
                         items = NULL, temperature = 0, top_p = 0.1, timeout = 300,
                         api_key = NULL, project_id = NULL, max_retries = 3,
                         retry_wait_seconds = 1, retry_backoff = 2,
@@ -367,6 +367,7 @@ run_dataset <- function(articles_dir, scale = "mqs", provider = "gemini", model 
         registry_dir = registry_dir,
         filetype = filetype,
         strip_references = strip_references,
+        tables_advanced = tables_advanced,
         items = items,
         output_dir = output_dir,
         temperature = temperature,

@@ -13,6 +13,7 @@ run_dataset(
   registry_dir = NULL,
   filetype = "auto",
   strip_references = TRUE,
+  tables_advanced = TRUE,
   max_articles = 0,
   items = NULL,
   temperature = 0,
