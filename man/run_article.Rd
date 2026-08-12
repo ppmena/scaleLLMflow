@@ -13,6 +13,7 @@ run_article(
   filetype = "auto",
   strip_references = TRUE,
   tables_advanced = TRUE,
+  cache_markdown = TRUE,
   items = NULL,
   output_dir = NULL,
   temperature = 0,

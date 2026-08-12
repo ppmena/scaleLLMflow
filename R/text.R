@@ -74,7 +74,8 @@ structure_article_markdown <- function(article_text, tables_advanced = TRUE) {
 #' @param pdf_path Path to a PDF article.
 #' @param strip_references Whether to remove the reference section before sending text to an LLM.
 #' @export
-extract_pdf_text <- function(pdf_path, strip_references = TRUE, tables_advanced = TRUE) {
+extract_pdf_text <- function(pdf_path, strip_references = TRUE, tables_advanced = TRUE,
+                             cache_markdown = TRUE) {
   if (!file.exists(pdf_path)) {
     stop("PDF not found: ", pdf_path, call. = FALSE)
   }
@@ -84,7 +85,12 @@ extract_pdf_text <- function(pdf_path, strip_references = TRUE, tables_advanced 
     article_text <- strip_references_section(article_text)
   }
 
-  structure_article_markdown(article_text, tables_advanced = tables_advanced)
+  markdown_text <- structure_article_markdown(article_text, tables_advanced = tables_advanced)
+  if (isTRUE(cache_markdown)) {
+    md_path <- file.path(dirname(pdf_path), paste0(tools::file_path_sans_ext(basename(pdf_path)), ".md"))
+    writeLines(markdown_text, md_path, useBytes = TRUE)
+  }
+  markdown_text
 }
 
 #' Extract text from a supported article file.
@@ -95,7 +101,8 @@ extract_pdf_text <- function(pdf_path, strip_references = TRUE, tables_advanced 
 #' @details Files are read from the local filesystem. PDF, TXT, and Markdown
 #' inputs are supported.
 #' @export
-extract_article_text <- function(file_path, filetype = "auto", strip_references = TRUE, tables_advanced = TRUE) {
+extract_article_text <- function(file_path, filetype = "auto", strip_references = TRUE,
+                                 tables_advanced = TRUE, cache_markdown = TRUE) {
   if (!file.exists(file_path)) {
     stop("Article file not found: ", file_path, call. = FALSE)
   }
@@ -109,7 +116,8 @@ extract_article_text <- function(file_path, filetype = "auto", strip_references 
   }
 
   if (filetype == "pdf") {
-    return(extract_pdf_text(file_path, strip_references = strip_references, tables_advanced = tables_advanced))
+    return(extract_pdf_text(file_path, strip_references = strip_references,
+      tables_advanced = tables_advanced, cache_markdown = cache_markdown))
   }
 
   article_text <- paste(readLines(file_path, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
@@ -139,7 +147,16 @@ list_article_files <- function(articles_dir, filetype = "auto") {
     md = "\\.md$"
   )
 
-  sort(list.files(articles_dir, pattern = pattern, full.names = TRUE, ignore.case = TRUE))
+  files <- sort(list.files(articles_dir, pattern = pattern, full.names = TRUE, ignore.case = TRUE))
+  if (filetype == "auto" && length(files) > 0) {
+    extensions <- tolower(tools::file_ext(files))
+    basenames <- tolower(basename(files))
+    md_names <- paste0(tools::file_path_sans_ext(basenames[extensions == "md"]), ".pdf")
+    pdf_names <- paste0(tools::file_path_sans_ext(basenames), ".pdf")
+    keep_pdf <- !(extensions == "pdf" & pdf_names %in% md_names)
+    files <- files[keep_pdf]
+  }
+  files
 }
 
 #' Append article text to a scale prompt.

@@ -14,6 +14,7 @@ run_dataset(
   filetype = "auto",
   strip_references = TRUE,
   tables_advanced = TRUE,
+  cache_markdown = TRUE,
   max_articles = 0,
   items = NULL,
   temperature = 0,

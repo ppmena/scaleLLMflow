@@ -8,7 +8,8 @@ extract_article_text(
   file_path,
   filetype = "auto",
   strip_references = TRUE,
-  tables_advanced = TRUE
+  tables_advanced = TRUE,
+  cache_markdown = TRUE
 )
 }
 \arguments{

@@ -79,6 +79,14 @@ testthat::test_that("line-oriented scores and multiline items are parsed", {
   testthat::expect_equal(parse_scale_scores(response, 1:2), c(Item_1 = 1, Item_2 = 0.5))
 })
 
+test_that("auto file listing prefers a same-name Markdown cache", {
+  dir <- tempfile(); dir.create(dir)
+  file.create(file.path(dir, "study.pdf")); file.create(file.path(dir, "study.md"))
+  file.create(file.path(dir, "other.pdf"))
+  files <- scaleLLMflow:::list_article_files(dir, "auto")
+  expect_equal(basename(files), c("other.pdf", "study.md"))
+})
+
 testthat::test_that("PEDro JSON decisions are parsed into numeric scores", {
   response <- paste0(
     '{"items":{"eligibility_criteria":{"decision":"No"},',

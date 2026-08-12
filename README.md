@@ -156,6 +156,33 @@ audit$checks
 
 To add a scale, see [ADD_NEW_SCALE_SKILL.md](ADD_NEW_SCALE_SKILL.md).
 
+### Local prompt training
+
+Prompts can be refined in a private training project without changing the
+package registry. Copy a scale prompt and its `metadata.json` to a local
+`scales/<scale>/<provider>-generic/` folder, run the articles into separate
+`iterations/iteration_N` directories, and compare them with a reviewed
+`ideal.csv`:
+
+```r
+run <- run_dataset(
+  "training/my_mqs/articles", scale = "mqs", provider = "gemini",
+  model = "gemini-3.6-flash", registry_dir = "training/my_mqs/scales",
+  output_dir = "training/my_mqs/iterations/iteration_1",
+  temperature = 0, tables_advanced = TRUE
+)
+
+comparison <- compare_training_iterations(
+  "training/my_mqs/ideal.csv", "training/my_mqs/iterations"
+)
+comparison$summary
+```
+
+Review item-level evidence and reasons before changing the local prompt. Keep
+each prompt snapshot and result directory; choose the version with the best
+item-level accuracy and the fewest systematic errors. Agreement with the
+training key is not external scientific validation.
+
 ### Private scales in a local research project
 
 You can use a private scale without editing the installed package, opening a
