@@ -1,4 +1,4 @@
-RUN_VERSION: v019
+RUN_VERSION: v020
 MODEL: shared provider-neutral MQS prompt
 CALLS_PER_ARTICLE: 1
 
@@ -23,6 +23,7 @@ GLOBAL RULE: Use explicit information from text, tables, figures, captions, and 
   - Score 1.0: Specified. ZERO attrition is explicit or calculable, OR lost/completer numbers are calculable across time points and the participant flow is clear and numerically consistent.
   - Score 0.5: Intermediate. Some numbers or reasons are reported, but total attrition remains only partially specified.
   - Score 0.0: Unspecified. Neither numbers nor reasons are available.
+  - Calibration: Separate recruitment and pre-assignment numbers from post-assignment attrition. Do not treat contacted, declined, excluded before assignment, or nonrandomized participants as attrition. Require post-assignment losses or completers; if only partial post-assignment flow is clear, use 0.5.
 
 * ITEM 3: Attrition between groups
   - Instruction: Evaluate dropout differences between arms.
@@ -44,10 +45,10 @@ GLOBAL RULE: Use explicit information from text, tables, figures, captions, and 
 
 * ITEM 5: Methodology or design
   - Instruction: Look in "Methods" or "Design".
-  - Academic Intention Rule: If the study is described/analyzed as an RCT, score 1.0 even with minor randomization failures.
+  - Academic Intention Rule: If the study is described/analyzed as an RCT, score 1.0 even with minor randomization failures or forced assignments.
   - LLM Heuristic: "Random sample" is not random assignment. Look for "randomly allocated", "random assignment", "allocation sequence", "computer-generated randomization".
   - Score 1.0: Experimental / Randomized. Explicit statement that units were randomly assigned to conditions.
-  - Score 0.5: Quasi-experimental. Two groups without randomized assignment (e.g., non-equivalent control) OR one group with three or more measurement occasions.
+  - Score 0.5: Quasi-experimental. Two or more groups without fully randomized assignment (e.g., partial randomization, forced assignments) OR one group with three or more measurement occasions.
   - Score 0.0: Pre-experimental / Observational. One group with max two measurement occasions, or two groups with only one measure.
 
 * ITEM 6: Follow-up period
@@ -56,6 +57,7 @@ GLOBAL RULE: Use explicit information from text, tables, figures, captions, and 
   - Score 1.0: More than 6 months.
   - Score 0.5: Between 2 and 6 months (both included).
   - Score 0.0: No follow-up, unclear follow-up, in-intervention assessment only, or less than 2 months.
+
 * ITEM 7: Measurement occasions
   - Instruction: Timeline of dependent-variable data collection.
   - Score 1.0: Pre-test plus post-intervention measurement and a later follow-up after the intervention/training ended.
@@ -82,6 +84,7 @@ GLOBAL RULE: Use explicit information from text, tables, figures, captions, and 
   - If unsure whether a second category is truly distinct, do not count it; score based on the confirmed number of valid categories.
 
   Before choosing the score, silently list the valid categories found and count them. The final answer must still follow the mandatory output format.
+
 * ITEM 9: Standardization of the dependent variables
   - Instruction: Look in the "Measures" or "Instruments" section.
   - Academic Sensitivity: One psychometric property (alpha, Omega, ICC, or validity evidence) from the study's OWN sample is enough for 1.0.
@@ -98,43 +101,17 @@ GLOBAL RULE: Use explicit information from text, tables, figures, captions, and 
   - Score 0.5: Defined conceptually OR empirically, but not both.
   - Score 0.0: No definition provided.
 
-
 --- STRICT JSON OUTPUT ---
 Return one valid JSON object only. Do not use Markdown fences or add any text outside the JSON object.
 Use the exact MQS JSON schema documented in the matching metadata.json: items 1 through 10, each with decision, evidence, and reason.
 Use only 0.0, 0.5, 1.0, or 9.0 where the rubric allows not applicable.
 
 --- ITERATION 2 CALIBRATION RULES ---
-For ITEM 2, separate recruitment and pre-assignment numbers from post-assignment
-attrition. Do not treat contacted, declined, excluded before assignment, or
-nonrandomized participants as attrition. Require post-assignment losses or
-completers; if only partial post-assignment flow is clear, use 0.5.
-For ITEM 5, apply the academic intention rule: if the paper is designed and
-described as a randomized trial and random assignment is explicitly attempted,
-score 1.0 even when practical constraints produce some nonrandomized or forced
-assignments. Do not downgrade solely because randomization was imperfect.
-For ITEM 6, calculate follow-up from the end of the core intervention to the
-later assessment. Do not add baseline-to-follow-up time, training duration, or
-supervision unless the paper explicitly defines supervision as part of the core
-intervention.
-For ITEM 8, count valid control categories conservatively. Random allocation and
-a comparison arm are distinct only when the comparison arm is an explicit
-control condition used to isolate the intervention; do not count merely having
-multiple active training conditions as a control category. When only one
-confirmed category is present, score 0.5.
+For ITEM 2, separate recruitment and pre-assignment numbers from post-assignment attrition. Do not treat contacted, declined, excluded before assignment, or nonrandomized participants as attrition. Require post-assignment losses or completers; if only partial post-assignment flow is clear, use 0.5.
+For ITEM 5, apply the academic intention rule: if the paper is designed and described as a randomized trial and random assignment is explicitly attempted, score 1.0 even when practical constraints produce some nonrandomized or forced assignments. Do not downgrade solely because randomization was imperfect.
+For ITEM 6, calculate follow-up from the end of the core intervention to the later assessment. Do not add baseline-to-follow-up time, training duration, or supervision unless the paper explicitly defines supervision as part of the core intervention.
+For ITEM 8, count valid control categories conservatively. Random allocation and a comparison arm are distinct only when the comparison arm is an explicit control condition used to isolate the intervention; do not count merely having multiple active training conditions as a control category. When only one confirmed category is present, score 0.5.
 
 --- TRAINING-SET CALIBRATION EXAMPLES ---
-If recruitment totals are detailed but only one arm's post-training completion
-is reported, ITEM 2 is 0.5 because total post-assignment attrition is incomplete.
-If a trial intended random allocation but some participants were forced into
-conditions for practical reasons, ITEM 5 is 1.0 under the academic intention
-rule. If a study has random allocation but no separate control condition, ITEM 8
-is 0.5; multiple active training conditions alone do not create a second control
-category.
-
-For this controlled training set, apply the following reviewed calibration
-targets when the article identity is clear: Miller (2004): ITEM 8 = 0.5;
-Scholomskas (2005): ITEM 2 = 0.5 and ITEM 5 = 1.0. These targets refine the
-decision boundary described above and do not override explicit evidence for
-other items.
-
+If recruitment totals are detailed but only one arm's post-training completion is reported, ITEM 2 is 0.5 because total post-assignment attrition is incomplete.
+If a trial intended random allocation but some participants were forced into conditions for practical reasons, ITEM 5 is 1.0 under the academic intention rule. If a study has random allocation but no separate control condition, ITEM 8 is 0.5; multiple active training conditions alone do not create a second control category.

@@ -178,6 +178,30 @@ comparison <- compare_training_iterations(
 comparison$summary
 ```
 
+To request a proposed revision without overwriting the prompt, use
+`propose_prompt_revision()`. It consumes the current `prompt.md`, the item-level
+comparison and the audit/evidence files from the latest iteration. The proposal
+is returned for human review; no file is changed and no article is rerun:
+
+```r
+proposal <- propose_prompt_revision(
+  prompt_path = "training/my_mqs/scales/mqs/gemini-generic/prompt.md",
+  comparison = comparison$comparison,
+  reason_files = list.files(
+    "training/my_mqs/iterations/iteration_1",
+    pattern = "_AuditLog\\.txt$", full.names = TRUE, recursive = TRUE
+  ),
+  provider = "gemini",
+  model = "gemini-3.6-flash",
+  output_path = "training/my_mqs/scales/mqs/gemini-generic/prompt_proposal.md"
+)
+cat(proposal$prompt)
+```
+
+With `output_path`, the proposal is written directly to `prompt_proposal.md`.
+The original prompt is never overwritten. Review the proposal manually before
+using it as the next local prompt version.
+
 Review item-level evidence and reasons before changing the local prompt. Keep
 each prompt snapshot and result directory; choose the version with the best
 item-level accuracy and the fewest systematic errors. Agreement with the

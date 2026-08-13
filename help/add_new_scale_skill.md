@@ -1,5 +1,10 @@
 # Skill: add a document-assessment scale to scaleLLMflow
 
+**Linked package version:** `scaleLLMflow 0.3.3`  
+**Compatibility:** This guide describes the registry, Markdown extraction, and
+local prompt-training interfaces available in version `0.3.3`. Review the
+package changelog and this version marker when using a later release.
+
 ## Purpose
 
 Use this guide as context when adding a new scientific document-assessment scale
@@ -183,3 +188,80 @@ Update `library/scaleLLMflow/README.md` with the new registry path and a
 minimal usage example. Keep the prompt source or version reference in the
 metadata and ensure the prompt snapshot is written by the workflow. Report
 which files changed, how the parser maps responses, and which tests were run.
+
+## Local prompt training and refinement
+
+Once a scale is registered, its prompt can be refined in a private training
+project without modifying the installed package or the official registry. Use a
+separate directory such as:
+
+```text
+training/my_scale_training/
+  articles/
+  ideal.csv
+  scales/my_scale/gemini-generic/prompt.md
+  scales/my_scale/gemini-generic/metadata.json
+  iterations/
+```
+
+The `articles/` directory contains a reviewed training set. `ideal.csv` must
+contain an `ID` column and expected item columns such as `IT01`, `IT02`, etc.
+Run the local registry into a separate iteration directory:
+
+```r
+library(scaleLLMflow)
+
+run <- run_dataset(
+  articles_dir = "training/my_scale_training/articles",
+  scale = "my_scale",
+  provider = "gemini",
+  model = "gemini-3.6-flash",
+  registry_dir = "training/my_scale_training/scales",
+  output_dir = "training/my_scale_training/iterations/iteration_1",
+  filetype = "auto",
+  temperature = 0,
+  tables_advanced = TRUE
+)
+
+comparison <- compare_training_iterations(
+  "training/my_scale_training/ideal.csv",
+  "training/my_scale_training/iterations"
+)
+comparison$summary
+comparison$comparison
+```
+
+The summary reports accuracy by iteration. The detailed comparison reports the
+obtained and ideal score for every article and item. Audit logs and evidence
+reports contain the evidence and reasons behind the decisions.
+
+### Proposing a revised prompt
+
+`propose_prompt_revision()` can request a complete revised prompt using the
+current prompt, the item-level comparison, and the reasons from the latest
+iteration:
+
+```r
+reason_files <- list.files(
+  "training/my_scale_training/iterations/iteration_1",
+  pattern = "_AuditLog\\.txt$", full.names = TRUE, recursive = TRUE
+)
+
+proposal <- propose_prompt_revision(
+  prompt_path = "training/my_scale_training/scales/my_scale/gemini-generic/prompt.md",
+  comparison = comparison$comparison,
+  reason_files = reason_files,
+  provider = "gemini",
+  model = "gemini-3.6-flash",
+  output_path = "training/my_scale_training/scales/my_scale/gemini-generic/prompt_proposal.md"
+)
+```
+
+The function does not run articles or overwrite the current prompt. Review the
+generated Markdown manually, verify that the scientific definition and JSON
+contract are preserved, and then decide whether to copy it to a new prompt
+version before running the next iteration. Keep every iteration and prompt
+snapshot in a separate directory. Four initial iterations are generally enough;
+agreement with the training key is calibration, not general scientific
+validation, so test the selected prompt on new articles and an independent
+reference set.
