@@ -49,12 +49,38 @@ structure_article_markdown <- function(article_text, tables_advanced = TRUE) {
   out <- character(0); i <- 1L
   heading <- "^(?:[0-9]+(?:\\.[0-9]+)*[.)]?|[IVXLC]+[.)])\\s+(.+)$"
   bullet <- "^(?:[-*•]|[0-9]+[.)])\\s+(.+)$"
+  section_heading <- paste0(
+    "^(abstract|resumen|introduction|background|objectives?|aims?|",
+    "methods?|methodology|design|participants?|sample|procedure|",
+    "intervention|measures?|instruments?|outcomes?|results?|",
+    "discussion|conclusions?|limitations?|references|bibliography|",
+    "statistical analysis|data analysis|appendix|supplementary materials)",
+    "[[:space:]:.]*$"
+  )
+  is_heading <- function(x, position) {
+    normalized <- tolower(gsub("[:.]$", "", trimws(x)))
+    grepl("^#{1,6}\\s+", x) ||
+      grepl(heading, x, perl = TRUE) ||
+      normalized %in% c("abstract", "resumen", "introduction", "background",
+        "objectives", "aims", "methods", "methodology", "design",
+        "participants", "sample", "procedure", "intervention", "measures",
+        "instruments", "outcomes", "results", "discussion", "conclusions",
+        "limitations", "references", "bibliography", "statistical analysis",
+        "data analysis", "appendix", "supplementary materials") ||
+      grepl(section_heading, trimws(x), perl = TRUE, ignore.case = TRUE) ||
+      (position <= 3L && nchar(x) >= 8L && nchar(x) <= 180L &&
+       !grepl("[.!?]$", x) && grepl("[A-Za-z]", x))
+  }
   while (i <= length(lines)) {
     x <- lines[[i]]
-    if (grepl("^#{1,6}\\s", x)) out <- c(out, x)
-    else if (grepl("^[A-Z][A-Z0-9 ,:;()&/-]{3,}$", x) || grepl(heading, x, perl=TRUE)) {
-      label <- if (grepl(heading, x, perl=TRUE)) sub(heading, "\\1", x, perl=TRUE) else x
-      out <- c(out, paste0("## ", label))
+    if (is_heading(x, i)) {
+      if (grepl("^#{1,6}\\s+", x)) {
+        out <- c(out, x)
+      } else {
+        label <- if (grepl(heading, x, perl = TRUE)) sub(heading, "\\1", x, perl = TRUE) else x
+        level <- if (i <= 3L || grepl("^(?:abstract|introduction|methods?|results?|discussion|conclusions?)", label, ignore.case = TRUE)) 2 else 3
+        out <- c(out, paste0(strrep("#", level), " ", trimws(label)))
+      }
     } else if (grepl(bullet, x, perl=TRUE)) out <- c(out, paste0("- ", sub(bullet, "\\1", x, perl=TRUE)))
     else if (isTRUE(tables_advanced) && i < length(lines) && (grepl("  ", x, fixed=TRUE) || grepl("\\t", x, fixed=TRUE)) && (grepl("  ", lines[[i+1L]], fixed=TRUE) || grepl("\\t", lines[[i+1L]], fixed=TRUE))) {
       block <- character(0)

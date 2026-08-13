@@ -1,4 +1,4 @@
-RUN_VERSION: v020
+RUN_VERSION: v021
 MODEL: shared provider-neutral MQS prompt
 CALLS_PER_ARTICLE: 1
 
@@ -106,12 +106,12 @@ Return one valid JSON object only. Do not use Markdown fences or add any text ou
 Use the exact MQS JSON schema documented in the matching metadata.json: items 1 through 10, each with decision, evidence, and reason.
 Use only 0.0, 0.5, 1.0, or 9.0 where the rubric allows not applicable.
 
---- ITERATION 2 CALIBRATION RULES ---
+--- ITERATION 3 CALIBRATION RULES ---
 For ITEM 2, separate recruitment and pre-assignment numbers from post-assignment attrition. Do not treat contacted, declined, excluded before assignment, or nonrandomized participants as attrition. Require post-assignment losses or completers; if only partial post-assignment flow is clear, use 0.5.
+For ITEM 3, score 9.0 only if no cross-group comparison or single-group design; otherwise, require group-level attrition data for 1.0 or 0.5.
+For ITEM 4, if no missing outcome data exist or are handled with inclusive methods, score 1.0; if methods are mentioned but incomplete, score 0.5; if no handling and missing data present, score 0.0.
 For ITEM 5, apply the academic intention rule: if the paper is designed and described as a randomized trial and random assignment is explicitly attempted, score 1.0 even when practical constraints produce some nonrandomized or forced assignments. Do not downgrade solely because randomization was imperfect.
 For ITEM 6, calculate follow-up from the end of the core intervention to the later assessment. Do not add baseline-to-follow-up time, training duration, or supervision unless the paper explicitly defines supervision as part of the core intervention.
 For ITEM 8, count valid control categories conservatively. Random allocation and a comparison arm are distinct only when the comparison arm is an explicit control condition used to isolate the intervention; do not count merely having multiple active training conditions as a control category. When only one confirmed category is present, score 0.5.
 
---- TRAINING-SET CALIBRATION EXAMPLES ---
-If recruitment totals are detailed but only one arm's post-training completion is reported, ITEM 2 is 0.5 because total post-assignment attrition is incomplete.
-If a trial intended random allocation but some participants were forced into conditions for practical reasons, ITEM 5 is 1.0 under the academic intention rule. If a study has random allocation but no separate control condition, ITEM 8 is 0.5; multiple active training conditions alone do not create a second control category.
+--- END OF PROMPT ---

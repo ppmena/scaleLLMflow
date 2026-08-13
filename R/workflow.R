@@ -35,6 +35,7 @@ build_provenance <- function(article_path, article_text, prompt_text, full_promp
     selected_prompt_model = resolved$selected_model,
     prompt_match_strategy = resolved$strategy,
     prompt_source = resolved$prompt_path,
+    prompt_version = if (is.null(resolved$metadata$prompt_version)) "unspecified" else as.character(resolved$metadata$prompt_version),
     provider = provider_alias(provider),
     temperature = temperature,
     top_p = top_p,
@@ -84,6 +85,8 @@ write_prompt_snapshot <- function(output_dir, prompt_text, resolved_prompt) {
     paste0("SELECTED_PROMPT_MODEL: ", resolved_prompt$selected_model),
     paste0("PROMPT_MATCH_STRATEGY: ", resolved_prompt$strategy),
     paste0("PROMPT_SOURCE: ", resolved_prompt$prompt_path),
+    paste0("PROMPT_VERSION: ", if (is.null(resolved_prompt$metadata$prompt_version)) "unspecified" else resolved_prompt$metadata$prompt_version),
+    paste0("PROMPT_SHA256: ", sha256_text(prompt_text)),
     "--- PROMPT TEXT ---",
     sep = "\n"
   )
@@ -135,6 +138,10 @@ build_audit_log <- function(clean_id, provider, model, strip_references, call_lo
 #' @param registry_dir Optional prompt registry root.
 #' @param filetype One of `"auto"`, `"pdf"`, `"txt"`, or `"md"`.
 #' @param strip_references Whether to remove references before the LLM call.
+#' @param tables_advanced Whether to structure extracted headings, lists, and
+#'   table-like blocks as Markdown before the LLM call.
+#' @param cache_markdown Whether PDF extraction writes a same-name `.md` cache
+#'   beside the source PDF for reuse by `filetype = "auto"`.
 #' @param items Item ids to parse. Defaults to 1:10.
 #' @param output_dir Optional output directory for an audit log.
 #' @param write_evidence Whether to write the per-article evidence CSV. Dataset

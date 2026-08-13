@@ -25,6 +25,15 @@ test_that("provenance contains stable hashes and execution metadata", {
   expect_true(!is.null(provenance$r_version))
 })
 
+test_that("prompt snapshots record prompt version and hash", {
+  resolved <- scaleLLMflow:::resolve_prompt("mqs", "gemini-3.6-flash")
+  out <- tempfile(); dir.create(out)
+  scaleLLMflow:::write_prompt_snapshot(out, "prompt text", resolved)
+  snapshot <- paste(readLines(file.path(out, "prompt_used.md")), collapse = "\n")
+  expect_match(snapshot, "PROMPT_VERSION:")
+  expect_match(snapshot, paste0("PROMPT_SHA256: ", scaleLLMflow:::sha256_text("prompt text")))
+})
+
 test_that("Gemini structured output schema is generated from scale metadata", {
   metadata <- scaleLLMflow:::resolve_prompt("mqs", "gemini-3.6-flash")$metadata
   schema <- scaleLLMflow:::build_gemini_json_schema(metadata$response_schema)

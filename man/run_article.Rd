@@ -46,6 +46,12 @@ run_article(
 
 \item{strip_references}{Whether to remove references before the LLM call.}
 
+\item{tables_advanced}{Whether to structure extracted headings, lists, and
+table-like blocks as Markdown before the LLM call.}
+
+\item{cache_markdown}{Whether PDF extraction writes a same-name \code{.md} cache
+beside the source PDF for reuse by \code{filetype = "auto"}.}
+
 \item{items}{Item ids to parse. Defaults to 1:10.}
 
 \item{output_dir}{Optional output directory for an audit log.}
