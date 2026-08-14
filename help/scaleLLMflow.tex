@@ -137,6 +137,10 @@ order and Markdown structure, especially for multi-column articles.
 \function{extract\_pdf\_text}
 \manualpart{Description}Extracts text from a local PDF using \code{pdftools}. With
 \code{conversion = "llm"}, an LLM reconstructs reading order and Markdown structure;
+For two-column PDFs, the conversion prompt explicitly requests complete left-column
+then right-column reading on each page. The model is selected independently with
+\code{provider} and \code{model} (or \code{conversion_provider} and
+\code{conversion_model} in \code{run_article}).
 this generally gives better results for complex and multi-column articles. If the
 extracted text exceeds \code{max_chars} (50,000 by default), it is split at safe
 line boundaries, converted in several calls, and reassembled into one Markdown file.

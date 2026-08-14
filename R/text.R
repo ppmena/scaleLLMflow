@@ -105,7 +105,10 @@ convert_article_markdown_llm <- function(article_text, provider = "gemini",
   if (is.null(prompt)) {
     prompt <- paste(
       "Convert the following PDF-extracted academic article into faithful Markdown.",
-      "Reconstruct reading order for multi-column pages, preserve every word, number,", 
+      "The source may come from a two-column PDF. Reconstruct reading order page by page:",
+      "read the complete left column from top to bottom, then the complete right column",
+      "from top to bottom. Never interleave lines merely because they share a horizontal",
+      "position. Preserve every word, number,",
       "table and heading, and do not summarize, correct, or invent content.",
       "Use Markdown headings only when the source contains a real section heading.",
       "Represent tables as Markdown tables only when a table is clearly present.",

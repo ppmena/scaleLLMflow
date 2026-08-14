@@ -1,7 +1,7 @@
 Package: scaleLLMflow
 Type: Package
 Title: General LLM Workflows for Scientific Scales
-Version: 0.3.5
+Version: 0.3.6
 Authors@R: person(
     given = "Jose",
     family = "Mena-Raposo",
