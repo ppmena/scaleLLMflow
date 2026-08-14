@@ -24,9 +24,9 @@ test_that("provenance contains stable hashes and execution metadata", {
   expect_equal(provenance$request_characters, nchar("prompt article"))
   expect_true(!is.null(provenance$r_version))
   expect_equal(metadata$selected_prompt, "scale")
-  expect_equal(metadata$prompt_version, "v019")
+  expect_equal(metadata$prompt_version, "v040")
   expect_equal(provenance$selected_prompt, "scale")
-  expect_equal(provenance$prompt_version, "v019")
+  expect_equal(provenance$prompt_version, "v040")
 })
 
 test_that("prompt snapshots record prompt version and hash", {

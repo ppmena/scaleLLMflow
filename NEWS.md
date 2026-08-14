@@ -1,10 +1,14 @@
 # scaleLLMflow 0.4.0
 
-## Release candidate
+## First stable release
 
-- Consolidates the prompt registry to one accepted, provider-neutral prompt per scale.
-- Enforces matching `RUN_VERSION` and `metadata.json$prompt_version` values.
-- Removes model- and provider-specific prompt selection and legacy fallbacks.
-- Updates MQS Item 8 with the calibrated control-category scoring proposal.
-- Adds GPT-5.6 reasoning configuration and keeps `temperature` compatible with `reasoning_effort = "none"`.
-- Updates training projects, examples, RStudio help, README, `.Rd`, and TeX documentation.
+`scaleLLMflow` provides a general framework for applying scientific rating
+scales to research articles with large language models. It supports article
+text extraction and Markdown conversion, scale-specific prompt registries,
+structured response validation, scoring, evidence capture, retries, audit
+logs, dataset workflows, prompt training, and comparison of model outputs.
+
+The release includes Gemini, OpenAI, and Claude integrations, provider-neutral
+prompts with strict version control, MQS and PEDro scale definitions, GPT-5.6
+reasoning configuration, and documentation and examples for local R/RStudio
+use.

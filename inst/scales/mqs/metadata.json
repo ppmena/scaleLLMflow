@@ -4,10 +4,10 @@
   "provider": "all",
   "training_dataset": "data/pdf/training_set1",
   "answer_key": "data/answers/respuestas_correctas_training_set1.csv",
-  "prompt_version": "v019",
+  "prompt_version": "v040",
   "status": "accepted",
   "accuracy": "123/160",
-  "notes": "Accepted scale-level MQS prompt; RUN_VERSION v019.",
+  "notes": "Accepted scale-level MQS prompt; RUN_VERSION v040.",
   "response_schema": {
     "type": "object",
     "required_item_keys": [

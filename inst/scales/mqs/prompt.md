@@ -1,4 +1,4 @@
-RUN_VERSION: v019
+RUN_VERSION: v040
 MODEL: shared provider-neutral MQS prompt
 CALLS_PER_ARTICLE: 1
 
