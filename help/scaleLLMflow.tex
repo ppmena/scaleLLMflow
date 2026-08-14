@@ -1,255 +1,654 @@
-% A CRAN-style reference manual for the scaleLLMflow package.
-% Compile with pdflatex twice (or with R's tools::texi2dvi) to refresh links.
-\documentclass[11pt]{article}
-\usepackage[a4paper,margin=28mm]{geometry}
-\usepackage[T1]{fontenc}
-\usepackage[utf8]{inputenc}
-\usepackage{lmodern}
-\usepackage{hyperref}
+\nonstopmode{}
+\documentclass[a4paper]{book}
+\usepackage[times,inconsolata,hyper]{Rd}
 \usepackage{makeidx}
-\makeindex
-
-\hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue,bookmarks=false}
-\pagestyle{plain}
-
-\newcommand{\code}[1]{\texttt{\detokenize{#1}}}
-\newcommand{\function}[1]{\subsection{\texttt{#1}}}
-\newcommand{\argitem}[2]{\item[\code{#1}] #2}
-\newcommand{\manualpart}[1]{\paragraph{#1}\mbox{}\\}
-
-\title{\textbf{scaleLLMflow}\\[4pt]\large General LLM Workflows for Scientific Quality Scales}
-\author{Proyecto MQS}
-\date{Version 0.3.7\\[2pt] 2026-08-14}
-
+\usepackage[utf8]{inputenc} % @SET ENCODING@
+% \usepackage{graphicx} % @USE GRAPHICX@
+\makeindex{}
 \begin{document}
-\maketitle
-\thispagestyle{empty}
-
-\begin{description}
-\item[Package] scaleLLMflow
-\item[Title] General LLM Workflows for Scientific Quality Scales
-\item[Version] 0.3.7
-\item[Depends] R (>= 3.5.0)
-\item[Imports] httr2, jsonlite, openssl, pdftools, stringr
-\item[License] MIT + file LICENSE
-\item[URL] \url{https://github.com/ppmena/scaleLLMflow}
-\end{description}
-
-\tableofcontents
-\newpage
-
-\section{Package scaleLLMflow}
-\index{scaleLLMflow-package}
-
-\subsection{Description}
-Reusable helpers for registering scientific quality scales, resolving prompts by
-provider and model, sending article text to Gemini, OpenAI, or Claude, validating strict JSON responses,
-parsing item scores, comparing them with reviewed references, and writing audit
-and evidence files.
-
-The package deliberately separates three layers: the formal scale definition in
-metadata, the operational prompt sent to the model, and the numeric coding used
-for analysis. The bundled MQS and PEDro registries provide one accepted,
-provider-neutral prompt per scale.
-
-\subsection{Two workflow modes}
-\begin{description}
-\item[Free mode] The model response is scored and preserved for inspection without
-assuming that a previous answer is correct.
-\item[Reference mode] A reviewed score vector is supplied and every returned item
-is compared with it. This mode reports agreement and mismatches while preserving
-the model's evidence and reasoning.
-\end{description}
-
-\subsection{Credentials and provider configuration}
-Gemini credentials are read from \code{GEMINI_API_KEY} or \code{GOOGLE_GEMINI_KEY}.
-OpenAI credentials are read from \code{OPENAI_API_KEY}; \code{OPENAI_PROJECT_ID}
-may also be supplied. A project-level \code{.Renviron} file is convenient for
-interactive work in RStudio and should not be committed.
-Claude credentials are read from \code{ANTHROPIC_API_KEY} or
-\code{CLAUDE_API_KEY}.
-
-\section{Registry and scale helpers}
-
-\function{available\_scales}
-\manualpart{Description}Lists scales available in the prompt registry.
-\manualpart{Arguments}\begin{description}
-\argitem{registry_dir}{Optional registry root. The bundled registry is used when omitted.}
-\end{description}
-\manualpart{Value}A character vector of scale identifiers.
-
-\function{available\_provider\_models}
-\manualpart{Description}Queries the provider's live model catalogue. This function
-is independent of the scale registry and does not use hard-coded model lists.
-\manualpart{Arguments}\begin{description}
-\argitem{provider}{\code{gemini}, \code{openai}, \code{claude}, or an alias. The aliases \code{chatgpt} and \code{anthropic} are accepted where applicable.}
-\argitem{api_key}{Optional in-memory key. Otherwise the provider environment variables are used.}
-\argitem{timeout}{Request timeout in seconds.}
-\argitem{supported_only}{For Gemini, retain models supporting \code{generateContent}.}
-\end{description}
-\manualpart{Value}A data frame with provider, model identifier, and display name.
-OpenAI uses \code{OPENAI_API_KEY}; Gemini uses \code{GEMINI_API_KEY} or
-\code{GOOGLE_GEMINI_KEY}; Claude uses \code{ANTHROPIC_API_KEY} or
-\code{CLAUDE_API_KEY}.
-
-\function{resolve\_prompt}
-\manualpart{Description}Resolves the most appropriate registered prompt and its
-metadata. Matching proceeds from the exact model to family, numeric-version,
-The resolver does not use model- or provider-specific prompt fallbacks.
-\manualpart{Arguments}\begin{description}
-\argitem{scale}{Scale identifier.}\argitem{model}{Requested model identifier.}\argitem{provider}{Optional provider used only for the API call.}\argitem{registry_dir}{Optional scale-level registry root.}
-\end{description}
-\manualpart{Value}A resolved registry record containing prompt text, metadata,
-scale definition, response schema, and provenance fields.
-
-\function{audit\_model\_registry}
-\manualpart{Description}Checks every scale and model registry entry for required
-files, valid metadata, a complete item definition, a coherent response schema,
-and prompt hashes. Exact duplicate prompts are grouped and a unification plan is
-reported.
-\manualpart{Arguments}\begin{description}
-\argitem{registry_dir}{Optional registry root.}\argitem{output_dir}{Optional directory for audit CSV reports.}\argitem{apply_unifications}{If \code{TRUE}, moves redundant prompt folders to a timestamped backup after reporting the plan.}
-\end{description}
-\manualpart{Value}An audit result with issue and success counts, duplicate groups,
-and proposed or applied unifications.
-
-\section{Prompt and text preparation}
-
-\function{build\_scale\_prompt}
-\manualpart{Description}Combines an operational scale prompt with the article text.
-\manualpart{Arguments}\begin{description}
-\argitem{prompt_text}{Registered prompt text.}\argitem{article_text}{Article text to evaluate.}
-\end{description}
-\manualpart{Value}The complete provider prompt as a character string.
-
-\function{extract\_article\_text}
-\manualpart{Description}Reads local Markdown or text articles and optionally removes
-the references section. PDF input is supported through \code{extract_pdf_text}.
-For PDF articles, \code{conversion = "llm"} generally produces better reading
-order and Markdown structure, especially for multi-column articles.
-\manualpart{Arguments}\begin{description}
-\argitem{file_path}{Local article path.}\argitem{filetype}{One of \code{auto}, \code{txt}, \code{md}, or \code{pdf}.}\argitem{strip_references}{Whether to remove references before model submission.}
-\end{description}
-\manualpart{Value}Article text.
-
-\function{extract\_pdf\_text}
-\manualpart{Description}Extracts text from a local PDF using \code{pdftools}. With
-\code{conversion = "llm"}, an LLM reconstructs reading order and Markdown structure;
-For two-column PDFs, the conversion prompt explicitly requests complete left-column
-then right-column reading on each page. The model is selected independently with
-\code{provider} and \code{model} (or \code{conversion_provider} and
-\code{conversion_model} in \code{run_article}).
-this generally gives better results for complex and multi-column articles. If the
-extracted text exceeds \code{max_chars} (50,000 by default), it is split at safe
-line boundaries, converted in several calls, and reassembled into one Markdown file.
-\manualpart{Arguments}\begin{description}\argitem{pdf_path}{Local PDF path.}\argitem{strip_references}{Whether to remove references.}\end{description}
-\manualpart{Value}Article text.
-
-\function{convert\_article\_markdown\_llm}
-\manualpart{Description}Converts extracted article text into faithful Markdown
-with an LLM, reconstructing reading order, headings, and clearly identified tables.
-This generally improves results for complex PDF layouts.
-\manualpart{Value}Markdown text returned by the configured provider.
-
-\function{strip\_references\_section}
-\manualpart{Description}Removes a detected references or bibliography section.
-\manualpart{Value}Text with the trailing references section removed when detected.
-
-\section{Parsing and provider calls}
-
-\function{parse\_scale\_scores}
-\manualpart{Description}Validates and parses a strict JSON scale response. Fenced
-JSON is normalized in a controlled way before validation. The registered metadata
-defines required items, allowed values, excluded items, and total-score rules.
-\manualpart{Arguments}\begin{description}
-\argitem{text}{Raw model response.}\argitem{items}{Expected item identifiers.}\argitem{metadata}{Optional resolved metadata and JSON Schema.}
-\end{description}
-\manualpart{Value}A named numeric vector of item scores. When metadata is supplied,
-the response is validated against its declared schema before scores are returned.
-
-\function{run\_llm}
-\manualpart{Description}Calls Gemini through the Interactions API, OpenAI
-through the Responses API, or Claude through Anthropic's Messages API. It applies rate limiting, retries transient failures
-with exponential backoff, records detailed errors, and returns the raw response
-needed for auditability.
-\manualpart{Arguments}\begin{description}
-\argitem{prompt}{Prompt sent to the provider.}\argitem{provider}{\code{gemini}, \code{openai}, \code{chatgpt}, \code{claude}, or \code{anthropic}.}\argitem{model}{Provider model identifier.}\argitem{temperature}{Sampling temperature; zero is recommended for reproducibility.}\argitem{top_p}{Gemini nucleus sampling parameter; ignored by OpenAI and Claude.}\argitem{timeout}{Timeout per attempt, in seconds.}\argitem{api_key}{Optional in-memory API key.}\argitem{project_id}{Optional OpenAI project id.}\argitem{max_retries}{Maximum transient-failure retries.}\argitem{retry_wait_seconds}{Initial retry delay.}\argitem{retry_backoff}{Retry-delay multiplier.}\argitem{rate_limit_seconds}{Minimum delay between requests in the current R process.}
-\end{description}
-\manualpart{Value}A provider response object containing text, request metadata,
-model and parameter provenance, hashes, input size, and error details when relevant.
-
-\section{Article and dataset workflows}
-
-\function{run\_article}
-\manualpart{Description}Runs one local article through a registered scale prompt.
-It writes raw audit output plus convenient score and evidence CSV files.
-\manualpart{Important arguments}\begin{description}
-\argitem{article_path}{Local article file.}\argitem{scale}{Scale identifier.}\argitem{provider}{Provider identifier.}\argitem{model}{Model identifier.}\argitem{output_dir}{Output directory.}\argitem{reference_scores}{Named reviewed scores; activates reference validation.}\argitem{validation_mode}{\code{free} or \code{reference}.}\argitem{temperature, top_p, timeout}{Provider parameters.}\argitem{max_retries, retry_wait_seconds, retry_backoff, rate_limit_seconds}{Reliability controls.}
-\end{description}
-\manualpart{Value}A result containing parsed scores, totals, evidence, reasons,
-validation comparisons, provenance, and output paths.
-
-\function{run\_dataset}
-\manualpart{Description}Processes all supported local articles in a directory and
-consolidates scores, evidence, audit information, and errors. A semicolon-separated
-reference CSV with \code{ID} and item columns activates dataset reference mode.
-\manualpart{Value}A dataset result with per-article records and consolidated output paths.
-
-\section{Bundled scales and registry layout}
-The bundled registry currently contains the MQS and PEDro scales. Each provider
-scale folder contains exactly two official files:
+\chapter*{}
+\begin{center}
+{\textbf{\huge \R{} documentation}} \par\bigskip{{\Large of all in \file{man}}}
+\par\bigskip{\large \today}
+\end{center}
+\Rdcontents{\R{} topics documented:}
+\inputencoding{utf8}
+\HeaderA{audit\_model\_registry}{Audit every registered scale and model prompt.}{audit.Rul.model.Rul.registry}
+%
+\begin{Description}
+Audit every registered scale and model prompt.
+\end{Description}
+%
+\begin{Usage}
 \begin{verbatim}
-inst/scales/<scale>/
-  prompt.md
-  metadata.json
-\end{verbatim}
-The metadata file is authoritative for item identifiers, allowed decisions,
-included items, total-score rules, and the response schema. Experimental
-folder may be added only when its prompt has been separately tuned or validated.
-
-PEDro reports all 11 items, but item 1 is excluded from the official total.
-MQS uses its declared 10-item scoring definition. Do not infer a total from
-the prompt text; use the metadata and package parser.
-
-\section{Examples}
-The following example is suitable for an interactive RStudio session:
-\begin{verbatim}
-library(scaleLLMflow)
-results <- run_dataset(
-  articles_dir = "examples/03_pedro_free/articles",
-  scale = "pedro",
-  provider = "gemini",
-  model = "gemini-3.6-flash-lite",
-  output_dir = "results/pedro-gemini",
-  validation_mode = "free",
-  temperature = 0,
-  top_p = 0.1
+audit_model_registry(
+  registry_dir = NULL,
+  output_dir = NULL,
+  apply_unifications = FALSE
 )
 \end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{registry\_dir}] Optional registry root. Defaults to bundled prompts.
 
-For Claude, configure \code{ANTHROPIC_API_KEY} or \code{CLAUDE_API_KEY} and
-run the bundled example. The scale and model are explicitly defined in the
-script:
+\item[\code{output\_dir}] Optional directory for audit and unification CSV reports.
+
+\item[\code{apply\_unifications}] Move exact duplicate prompt folders to a timestamped
+backup directory. Defaults to \code{FALSE}.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+A list with checks, duplicate\_groups, unification\_plan, and backup\_dir.
+\end{Value}
+\inputencoding{utf8}
+\HeaderA{available\_provider\_models}{List models currently available to the configured provider.}{available.Rul.provider.Rul.models}
+%
+\begin{Description}
+List models currently available to the configured provider.
+\end{Description}
+%
+\begin{Usage}
 \begin{verbatim}
-Rscript examples/05_claude_free/run.R
+available_provider_models(
+  provider,
+  api_key = NULL,
+  timeout = 30,
+  supported_only = TRUE
+)
 \end{verbatim}
-Edit \code{scale} and \code{model} in that script to switch between MQS/PEDro
-or another Claude model.
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{provider}] \code{"gemini"}, \code{"openai"}, \code{"claude"}, or an alias.
 
-For comparison against reviewed scores:
+\item[\code{api\_key}] Optional in-memory API key. Otherwise the provider's usual
+environment variables are used.
+
+\item[\code{timeout}] Request timeout in seconds.
+
+\item[\code{supported\_only}] For Gemini, keep models supporting \code{generateContent}.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+A data frame with provider, model id, display name, and raw metadata.
+\end{Value}
+\inputencoding{utf8}
+\HeaderA{available\_scales}{List scales available in the local prompt registry.}{available.Rul.scales}
+%
+\begin{Description}
+List scales available in the local prompt registry.
+\end{Description}
+%
+\begin{Usage}
 \begin{verbatim}
-results <- run_dataset(
-  articles_dir = "articles",
-  scale = "mqs",
+available_scales(registry_dir = NULL)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{registry\_dir}] Optional registry root. Defaults to bundled package prompts.
+\end{ldescription}
+\end{Arguments}
+\inputencoding{utf8}
+\HeaderA{build\_scale\_prompt}{Append article text to a scale prompt.}{build.Rul.scale.Rul.prompt}
+%
+\begin{Description}
+Append article text to a scale prompt.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+build_scale_prompt(prompt_text, article_text)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{prompt\_text}] Scale prompt text.
+
+\item[\code{article\_text}] Extracted article text.
+\end{ldescription}
+\end{Arguments}
+\inputencoding{utf8}
+\HeaderA{compare\_training\_iterations}{Compare local prompt-training iterations with a reviewed answer key.}{compare.Rul.training.Rul.iterations}
+%
+\begin{Description}
+Each iteration directory must contain one timestamped \AsIs{\texttt{*\_Consensus\_Report.csv}}
+produced by \code{\LinkA{run\_dataset()}{run.Rul.dataset}}. The answer key must contain an \code{ID} column and
+columns named \code{IT01}, \code{IT02}, etc., or another \code{IT}-prefixed item scheme.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+compare_training_iterations(ideal_csv, iterations_dir)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{ideal\_csv}] Path to the reviewed answer-key CSV.
+
+\item[\code{iterations\_dir}] Directory containing \code{iteration\_1}, \code{iteration\_2}, etc.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+A list with \code{comparison} (item-level rows) and \code{summary} (accuracy by
+iteration).
+\end{Value}
+\inputencoding{utf8}
+\HeaderA{convert\_article\_markdown\_llm}{Convert extracted article text to faithful Markdown with an LLM.}{convert.Rul.article.Rul.markdown.Rul.llm}
+%
+\begin{Description}
+Convert extracted article text to faithful Markdown with an LLM.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+convert_article_markdown_llm(
+  article_text,
   provider = "openai",
-  model = "gpt-4.1-mini",
-  output_dir = "results/reference",
-  reference_csv = "mqs_reference.csv",
-  validation_mode = "reference"
+  model = "gpt-5.6-luna",
+  temperature = 0,
+  prompt = NULL,
+  max_chars = 50000,
+  ...
 )
 \end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{article\_text}] Extracted article text.
 
-\section{Index}
-\printindex
+\item[\code{provider}] LLM provider.
 
+\item[\code{model}] Provider model.
+
+\item[\code{temperature}] Sampling temperature.
+
+\item[\code{prompt}] Optional local conversion prompt.
+
+\item[\code{...}] Additional provider call settings.
+\end{ldescription}
+\end{Arguments}
+\inputencoding{utf8}
+\HeaderA{extract\_article\_text}{Extract text from a supported article file.}{extract.Rul.article.Rul.text}
+%
+\begin{Description}
+Extract text from a supported article file.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+extract_article_text(
+  file_path,
+  filetype = "auto",
+  strip_references = TRUE,
+  tables_advanced = TRUE,
+  cache_markdown = TRUE,
+  conversion = "basic",
+  provider = "gemini",
+  model = "gemini-3.6-flash",
+  conversion_prompt = NULL,
+  temperature = 0,
+  max_chars = 50000,
+  ...
+)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{file\_path}] Path to a \code{.pdf}, \code{.txt}, or \code{.md} article file.
+
+\item[\code{filetype}] One of \code{"auto"}, \code{"pdf"}, \code{"txt"}, or \code{"md"}.
+
+\item[\code{strip\_references}] Whether to remove the reference section before sending text to an LLM.
+
+\item[\code{conversion}] PDF conversion mode passed to \code{extract\_pdf\_text()}.
+
+\item[\code{provider, model, conversion\_prompt, temperature}] LLM conversion settings.
+
+\item[\code{max\_chars}] Maximum text size per LLM conversion call.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Details}
+Files are read from the local filesystem. PDF, TXT, and Markdown
+inputs are supported.
+\end{Details}
+\inputencoding{utf8}
+\HeaderA{extract\_pdf\_text}{Extract text from a PDF article.}{extract.Rul.pdf.Rul.text}
+%
+\begin{Description}
+Extract text from a PDF article.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+extract_pdf_text(
+  pdf_path,
+  strip_references = TRUE,
+  tables_advanced = TRUE,
+  cache_markdown = TRUE,
+  conversion = "basic",
+  provider = "openai",
+  model = "gpt-5.6-luna",
+  conversion_prompt = NULL,
+  temperature = 0,
+  max_chars = 50000,
+  ...
+)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{pdf\_path}] Path to a PDF article.
+
+\item[\code{strip\_references}] Whether to remove the reference section before sending text to an LLM.
+
+\item[\code{tables\_advanced}] Whether to apply local table heuristics.
+
+\item[\code{cache\_markdown}] Whether to cache PDF conversion beside the source PDF.
+
+\item[\code{conversion}] PDF conversion mode: \code{"basic"} or \code{"llm"}. LLM conversion
+usually produces better reading order and Markdown structure for multi-column articles.
+
+\item[\code{provider, model, conversion\_prompt, temperature}] LLM conversion settings.
+
+\item[\code{max\_chars}] Maximum extracted-text size per LLM conversion call. Larger
+PDFs are split into line-safe chunks and reassembled into one Markdown file.
+\end{ldescription}
+\end{Arguments}
+\inputencoding{utf8}
+\HeaderA{parse\_scale\_scores}{Parse scale item scores from an LLM response.}{parse.Rul.scale.Rul.scores}
+%
+\begin{Description}
+Parse scale item scores from an LLM response.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+parse_scale_scores(text, items = 1:10, metadata = NULL)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{text}] LLM response text.
+
+\item[\code{items}] Numeric item ids to parse. Defaults to 1:10.
+
+\item[\code{metadata}] Optional resolved scale metadata.
+\end{ldescription}
+\end{Arguments}
+\inputencoding{utf8}
+\HeaderA{propose\_prompt\_revision}{Propose a revised prompt from the results of a training iteration.}{propose.Rul.prompt.Rul.revision}
+%
+\begin{Description}
+This function does not modify files, execute articles, or replace the
+current prompt. It asks the selected provider to propose a complete revised
+prompt using the current prompt, item-level comparison, and audit logs from
+the latest iteration.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+propose_prompt_revision(
+  prompt_path,
+  comparison,
+  reason_files,
+  provider = "gemini",
+  model = "gemini-3.6-flash",
+  api_key = NULL,
+  project_id = NULL,
+  temperature = 0,
+  timeout = 300,
+  output_path = NULL
+)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{prompt\_path}] Path to the current prompt.md.
+
+\item[\code{comparison}] A comparison data frame, or path to comparison.csv.
+
+\item[\code{reason\_files}] Character vector of audit-log or evidence files.
+
+\item[\code{provider}] LLM provider used to generate the proposal.
+
+\item[\code{model}] Model used to generate the proposal.
+
+\item[\code{api\_key}] Optional in-memory API key.
+
+\item[\code{project\_id}] Optional OpenAI project identifier.
+
+\item[\code{temperature}] Generation temperature. Defaults to 0.
+
+\item[\code{timeout}] Request timeout in seconds.
+
+\item[\code{output\_path}] Optional path where the proposal is written as Markdown.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+A list with the proposed prompt, source paths, provider, and model.
+\end{Value}
+\inputencoding{utf8}
+\HeaderA{resolve\_prompt}{Resolve the best prompt registered for a scale and requested model.}{resolve.Rul.prompt}
+%
+\begin{Description}
+Resolution order is exact model, same model family token, same numeric version,
+The accepted prompt is always the scale-level prompt in
+\code{scales/<scale>/prompt.md}, with its metadata in the sibling
+\code{metadata.json}. No model- or provider-specific fallback is used.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+resolve_prompt(scale, model, provider = NULL, registry_dir = NULL)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{scale}] Scale name, for example \code{"mqs"}.
+
+\item[\code{model}] Requested model name.
+
+\item[\code{provider}] Optional provider used only for the API call. It does not
+select a prompt.
+
+\item[\code{registry\_dir}] Optional registry root. Defaults to bundled package prompts.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+A list containing prompt path, model folder, match strategy, and metadata.
+\end{Value}
+\inputencoding{utf8}
+\HeaderA{run\_article}{Run one article file through a registered scale prompt.}{run.Rul.article}
+%
+\begin{Description}
+Run one article file through a registered scale prompt.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+run_article(
+  article_path = NULL,
+  scale = "mqs",
+  provider = "gemini",
+  model = "gemini-3.6-flash",
+  registry_dir = NULL,
+  filetype = "auto",
+  strip_references = TRUE,
+  tables_advanced = TRUE,
+  cache_markdown = TRUE,
+  conversion = "basic",
+  conversion_provider = "openai",
+  conversion_model = "gpt-5.6-luna",
+  conversion_prompt = NULL,
+  max_chars = 50000,
+  items = NULL,
+  output_dir = NULL,
+  temperature = 0,
+  top_p = 0.1,
+  timeout = 300,
+  api_key = NULL,
+  project_id = NULL,
+  pdf_path = NULL,
+  reasoning_effort = NULL,
+  max_retries = 3,
+  retry_wait_seconds = 1,
+  retry_backoff = 2,
+  rate_limit_seconds = 0,
+  reference_scores = NULL,
+  validation_mode = c("free", "reference"),
+  write_evidence = TRUE
+)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{article\_path}] Article path. Supported extensions are \code{.pdf}, \code{.txt}, and \code{.md}.
+
+\item[\code{scale}] Scale name. Defaults to \code{"mqs"}.
+
+\item[\code{provider}] LLM provider. Defaults to \code{"gemini"}.
+
+\item[\code{model}] Requested model. Defaults to \code{"gemini-3.6-flash"}.
+
+\item[\code{registry\_dir}] Optional prompt registry root.
+
+\item[\code{filetype}] One of \code{"auto"}, \code{"pdf"}, \code{"txt"}, or \code{"md"}.
+
+\item[\code{strip\_references}] Whether to remove references before the LLM call.
+
+\item[\code{tables\_advanced}] Whether to structure extracted headings, lists, and
+table-like blocks as Markdown before the LLM call.
+
+\item[\code{cache\_markdown}] Whether PDF extraction writes a same-name \code{.md} cache
+beside the source PDF for reuse by \code{filetype = "auto"}.
+
+\item[\code{conversion}] PDF conversion mode: \code{"basic"} or \code{"llm"}. LLM conversion
+generally gives better results for multi-column articles and complex layouts.
+
+\item[\code{conversion\_provider, conversion\_model, conversion\_prompt}] Settings for the
+LLM used only to convert PDF text into Markdown.
+
+\item[\code{max\_chars}] Maximum text size per LLM PDF-conversion call; larger PDFs
+are split and reassembled automatically.
+
+\item[\code{items}] Item ids to parse. Defaults to 1:10.
+
+\item[\code{output\_dir}] Optional output directory for an audit log.
+
+\item[\code{temperature, top\_p, timeout, api\_key, project\_id}] Provider call settings.
+
+\item[\code{pdf\_path}] Backward-compatible alias for \code{article\_path}.
+
+\item[\code{max\_retries, retry\_wait\_seconds, retry\_backoff, rate\_limit\_seconds}] Reliability settings.
+
+\item[\code{reference\_scores}] Optional reviewed scores for reference validation.
+
+\item[\code{validation\_mode}] Either \code{"free"} or \code{"reference"}.
+
+\item[\code{write\_evidence}] Whether to write the per-article evidence CSV. Dataset
+workflows set this to \code{FALSE} because they write one consolidated report.
+\end{ldescription}
+\end{Arguments}
+\inputencoding{utf8}
+\HeaderA{run\_dataset}{Run article files in a directory through a registered scale prompt.}{run.Rul.dataset}
+%
+\begin{Description}
+Existing \AsIs{\texttt{*\_AuditLog.txt}} files larger than 100 bytes are reused and skipped.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+run_dataset(
+  articles_dir,
+  scale = "mqs",
+  provider = "gemini",
+  model = "gemini-3.6-flash",
+  output_dir,
+  registry_dir = NULL,
+  filetype = "auto",
+  strip_references = TRUE,
+  tables_advanced = TRUE,
+  cache_markdown = TRUE,
+  conversion = "basic",
+  conversion_provider = "openai",
+  conversion_model = "gpt-5.6-luna",
+  conversion_prompt = NULL,
+  max_articles = 0,
+  max_chars = 50000,
+  items = NULL,
+  temperature = 0,
+  top_p = 0.1,
+  timeout = 300,
+  api_key = NULL,
+  project_id = NULL,
+  max_retries = 3,
+  retry_wait_seconds = 1,
+  retry_backoff = 2,
+  rate_limit_seconds = 0,
+  reference_csv = NULL,
+  reasoning_effort = NULL,
+  validation_mode = c("free", "reference")
+)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{articles\_dir}] Directory containing articles.
+
+\item[\code{scale}] Scale name.
+
+\item[\code{provider}] LLM provider.
+
+\item[\code{model}] Requested model.
+
+\item[\code{output\_dir}] Directory where audit logs and CSV are written.
+
+\item[\code{registry\_dir}] Optional prompt registry root.
+
+\item[\code{filetype}] One of \code{"auto"}, \code{"pdf"}, \code{"txt"}, or \code{"md"}.
+
+\item[\code{strip\_references, items, temperature, top\_p, timeout, api\_key, project\_id}] Provider and parsing settings.
+
+\item[\code{conversion, conversion\_provider, conversion\_model, conversion\_prompt}] PDF
+conversion settings. LLM conversion generally gives better results for
+multi-column articles and complex layouts.
+
+\item[\code{max\_articles}] Maximum pending PDFs to process. \code{0} means all.
+
+\item[\code{max\_chars}] Maximum text size per LLM PDF-conversion call.
+
+\item[\code{max\_retries, retry\_wait\_seconds, retry\_backoff, rate\_limit\_seconds}] Reliability settings.
+
+\item[\code{reference\_csv}] Optional reviewed-score CSV.
+
+\item[\code{validation\_mode}] Either \code{"free"} or \code{"reference"}.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+A list containing the timestamped run directory, consensus report,
+consolidated evidence report, and errors when any occurred.
+\end{Value}
+\inputencoding{utf8}
+\HeaderA{run\_llm}{Call a supported LLM provider with user-owned API credentials.}{run.Rul.llm}
+%
+\begin{Description}
+Call a supported LLM provider with user-owned API credentials.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+run_llm(
+  prompt,
+  provider = "gemini",
+  model = "gemini-3.6-flash",
+  temperature = 0,
+  top_p = 0.1,
+  timeout = 300,
+  api_key = NULL,
+  project_id = NULL,
+  max_retries = 3,
+  retry_wait_seconds = 1,
+  retry_backoff = 2,
+  rate_limit_seconds = 0,
+  response_schema = NULL,
+  reasoning_effort = NULL
+)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{prompt}] Prompt text to send.
+
+\item[\code{provider}] \code{"gemini"}, \code{"openai"}, \code{"chatgpt"}, \code{"claude"}, or \code{"anthropic"}.
+
+\item[\code{model}] Model id.
+
+\item[\code{temperature}] Sampling temperature. For GPT-5.6 models it is sent only
+when \code{reasoning\_effort = "none"}.
+
+\item[\code{top\_p}] Gemini nucleus-sampling value; ignored by OpenAI and Claude.
+
+\item[\code{timeout}] Maximum duration in seconds for each individual API attempt.
+
+\item[\code{api\_key}] Optional in-memory API key.
+
+\item[\code{project\_id}] Optional OpenAI project id.
+
+\item[\code{max\_retries}] Maximum retries for transient failures.
+
+\item[\code{retry\_wait\_seconds}] Initial exponential-backoff delay.
+
+\item[\code{retry\_backoff}] Multiplicative exponential-backoff factor.
+
+\item[\code{rate\_limit\_seconds}] Minimum delay between requests in this R process.
+
+\item[\code{response\_schema}] Optional registered response schema.
+
+\item[\code{reasoning\_effort}] Optional Responses API reasoning effort, for example
+\code{"none"}, \code{"low"}, or \code{"medium"}. GPT-5.6 models require
+\code{"none"} when \code{temperature} is used; otherwise temperature is omitted.
+\end{ldescription}
+\end{Arguments}
+\inputencoding{utf8}
+\HeaderA{strip\_references\_section}{Remove reference sections from extracted article text.}{strip.Rul.references.Rul.section}
+%
+\begin{Description}
+Remove reference sections from extracted article text.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+strip_references_section(article_text)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{article\_text}] Full extracted text.
+\end{ldescription}
+\end{Arguments}
+\inputencoding{utf8}
+\HeaderA{structure\_article\_markdown}{Convert extracted text to Markdown headings, lists, and tables.}{structure.Rul.article.Rul.markdown}
+%
+\begin{Description}
+Convert extracted text to Markdown headings, lists, and tables.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+structure_article_markdown(article_text, tables_advanced = TRUE)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{article\_text}] Extracted article text.
+
+\item[\code{tables\_advanced}] Whether to convert table-like blocks.
+\end{ldescription}
+\end{Arguments}
+\printindex{}
 \end{document}
