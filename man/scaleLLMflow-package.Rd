@@ -7,14 +7,13 @@
 \title{scaleLLMflow: General LLM Workflows for Scientific Quality Scales}
 \description{
 Reusable helpers to register MQS, PEDro, and other scientific scale prompts,
-resolve provider-specific or model-specific prompts, call Gemini, OpenAI,
+resolve scale-level prompts, call Gemini, OpenAI,
 and Claude APIs, discover live provider model catalogues, validate responses,
 parse item scores, and write audit logs and evidence reports.
 }
 \details{
 The bundled registry currently contains MQS and PEDro. Each scale includes
-\code{claude-generic}, \code{gemini-generic}, and \code{openai-generic} prompt folders, with
-optional model-specific variants. API keys are read from the user's
+one accepted \code{prompt.md} and \code{metadata.json} per scale. API keys are read from the user's
 environment or supplied in memory and are never stored by the package.
 }
 \author{

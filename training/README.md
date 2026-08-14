@@ -11,8 +11,8 @@ training/
   training_<escala>_<numero>/
     articles/
     ideal.csv
-    scales/<escala>/<provider>-generic/prompt.md
-    scales/<escala>/<provider>-generic/metadata.json
+    scales/<escala>/prompt.md
+    scales/<escala>/metadata.json
     iterations/iteration_1/
     iterations/iteration_2/
     comparison.csv
@@ -23,7 +23,7 @@ training/
 
 ## Registro local
 
-El prompt oficial se copia a la carpeta del experimento y se modifica únicamente allí. El registro local se utiliza mediante `registry_dir`:
+El prompt oficial se copia a la carpeta del experimento y se modifica únicamente allí. El registro local sigue siendo por escala, no por proveedor o modelo:
 
 ```r
 library(scaleLLMflow)
@@ -41,7 +41,7 @@ run <- run_dataset(
 )
 ```
 
-El paquete oficial permanece intacto. `metadata.json` debe conservar la definición formal de la escala y el esquema JSON; solo se actualiza localmente `prompt_version` cuando corresponda.
+El paquete oficial permanece intacto. `metadata.json` debe conservar la definición formal de la escala y el esquema JSON. Cada experimento debe cambiar `RUN_VERSION` y mantenerlo idéntico a `prompt_version`; una propuesta no se convierte en prompt aceptado hasta revisión humana y actualización deliberada del registro oficial.
 
 ## Ciclo de entrenamiento
 

@@ -35,7 +35,7 @@ provider <- "openai"
 model <- "gpt-4.1-mini"
 scale <- "mqs"
 registry_dir <- file.path(example_dir, "scales")
-prompt_path <- file.path(registry_dir, "mqs", "openai-generic", "prompt.md")
+prompt_path <- file.path(registry_dir, "mqs", "prompt.md")
 iterations_dir <- file.path(example_dir, "iterations")
 
 run_iteration <- function(iteration, prompt_proposal_path = NULL) {
@@ -81,10 +81,10 @@ proposal_2 <- propose_prompt_revision(
   reason_files = latest_reasons("iteration_1"),
   provider = provider,
   model = model,
-  output_path = file.path(registry_dir, "mqs", "openai-generic", "prompt_proposal_2.md")
+  output_path = file.path(registry_dir, "mqs", "prompt_proposal_2.md")
 )
 file.copy(prompt_path,
-  file.path(registry_dir, "mqs", "openai-generic", "prompt_iteration_1.md"),
+  file.path(registry_dir, "mqs", "prompt_iteration_1.md"),
   overwrite = TRUE)
 
 # Iteration 2: evaluate proposal 2.
@@ -101,7 +101,7 @@ proposal_3 <- propose_prompt_revision(
   reason_files = latest_reasons("iteration_2"),
   provider = provider,
   model = model,
-  output_path = file.path(registry_dir, "mqs", "openai-generic", "prompt_proposal_3.md")
+  output_path = file.path(registry_dir, "mqs", "prompt_proposal_3.md")
 )
 
 print(comparison_2$summary)

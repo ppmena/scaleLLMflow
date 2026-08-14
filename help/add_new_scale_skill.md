@@ -32,13 +32,12 @@ meaning, item order, and response encoding.
 
 ## Required implementation
 
-Create provider-generic directories for every scale, plus optional
-model-specific directories when a prompt has been tuned or validated for a
-particular model:
+Create one scale-level directory for every scale. Prompts are independent of
+provider and model; experimental alternatives belong in a separate training
+registry and are never implicit fallbacks in the package:
 
 ```text
-library/scaleLLMflow/inst/scales/<scale_name>/<provider>-generic/
-library/scaleLLMflow/inst/scales/<scale_name>/<model_name>/
+library/scaleLLMflow/inst/scales/<scale_name>/
   prompt.md
   metadata.json
 ```
@@ -199,8 +198,8 @@ separate directory such as:
 training/my_scale_training/
   articles/
   ideal.csv
-  scales/my_scale/gemini-generic/prompt.md
-  scales/my_scale/gemini-generic/metadata.json
+  scales/my_scale/prompt.md
+  scales/my_scale/metadata.json
   iterations/
 ```
 
@@ -248,12 +247,12 @@ reason_files <- list.files(
 )
 
 proposal <- propose_prompt_revision(
-  prompt_path = "training/my_scale_training/scales/my_scale/gemini-generic/prompt.md",
+  prompt_path = "training/my_scale_training/scales/my_scale/prompt.md",
   comparison = comparison$comparison,
   reason_files = reason_files,
   provider = "gemini",
   model = "gemini-3.6-flash",
-  output_path = "training/my_scale_training/scales/my_scale/gemini-generic/prompt_proposal.md"
+  output_path = "training/my_scale_training/scales/my_scale/prompt_proposal.md"
 )
 ```
 

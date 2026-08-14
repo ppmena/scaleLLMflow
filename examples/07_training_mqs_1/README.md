@@ -54,11 +54,11 @@ To save it directly as a separate file:
 
 ```r
 proposal <- propose_prompt_revision(
-  prompt_path = "scales/mqs/openai-generic/prompt.md",
+  prompt_path = "scales/mqs/prompt.md",
   comparison = "comparison.csv",
   reason_files = list.files("iterations/iteration_1", pattern = "_AuditLog\\.txt$",
     full.names = TRUE, recursive = TRUE),
   provider = "openai", model = "gpt-4.1-mini",
-  output_path = "scales/mqs/openai-generic/prompt_proposal.md"
+  output_path = "scales/mqs/prompt_proposal.md"
 )
 ```

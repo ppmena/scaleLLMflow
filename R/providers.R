@@ -261,7 +261,8 @@ call_claude <- function(prompt, model, temperature = 0, timeout = 300,
 #' @param prompt Prompt text to send.
 #' @param provider `"gemini"`, `"openai"`, `"chatgpt"`, `"claude"`, or `"anthropic"`.
 #' @param model Model id.
-#' @param temperature Sampling temperature.
+#' @param temperature Sampling temperature. For GPT-5.6 models it is sent only
+#'   when `reasoning_effort = "none"`.
 #' @param top_p Gemini nucleus-sampling value; ignored by OpenAI and Claude.
 #' @param timeout Maximum duration in seconds for each individual API attempt.
 #' @param max_retries Maximum retries for transient failures.
@@ -272,8 +273,8 @@ call_claude <- function(prompt, model, temperature = 0, timeout = 300,
 #' @param project_id Optional OpenAI project id.
 #' @param response_schema Optional registered response schema.
 #' @param reasoning_effort Optional Responses API reasoning effort, for example
-#'   `"none"`, `"low"`, or `"medium"`. For GPT-5.6 with temperature, use
-#'   `"none"` explicitly.
+#'   `"none"`, `"low"`, or `"medium"`. GPT-5.6 models require
+#'   `"none"` when `temperature` is used; otherwise temperature is omitted.
 #' @export
 run_llm <- function(prompt, provider = "gemini", model = "gemini-3.6-flash",
                     temperature = 0, top_p = 0.1, timeout = 300,

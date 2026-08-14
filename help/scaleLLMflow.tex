@@ -49,8 +49,8 @@ and evidence files.
 
 The package deliberately separates three layers: the formal scale definition in
 metadata, the operational prompt sent to the model, and the numeric coding used
-for analysis. The bundled MQS and PEDro registries provide provider-generic
-prompts for Gemini, OpenAI, and Claude, plus selected model-specific variants.
+for analysis. The bundled MQS and PEDro registries provide one accepted,
+provider-neutral prompt per scale.
 
 \subsection{Two workflow modes}
 \begin{description}
@@ -95,11 +95,9 @@ OpenAI uses \code{OPENAI_API_KEY}; Gemini uses \code{GEMINI_API_KEY} or
 \function{resolve\_prompt}
 \manualpart{Description}Resolves the most appropriate registered prompt and its
 metadata. Matching proceeds from the exact model to family, numeric-version,
-provider-specific generic, generic, and nearest available fallbacks. The
-provider-specific fallback folders are named \code{claude-generic},
-\code{gemini-generic}, and \code{openai-generic}.
+The resolver does not use model- or provider-specific prompt fallbacks.
 \manualpart{Arguments}\begin{description}
-\argitem{scale}{Scale identifier.}\argitem{model}{Requested model identifier.}\argitem{provider}{Optional provider used to select its generic prompt.}\argitem{registry_dir}{Optional registry root.}
+\argitem{scale}{Scale identifier.}\argitem{model}{Requested model identifier.}\argitem{provider}{Optional provider used only for the API call.}\argitem{registry_dir}{Optional scale-level registry root.}
 \end{description}
 \manualpart{Value}A resolved registry record containing prompt text, metadata,
 scale definition, response schema, and provenance fields.
@@ -199,14 +197,14 @@ reference CSV with \code{ID} and item columns activates dataset reference mode.
 
 \section{Bundled scales and registry layout}
 The bundled registry currently contains the MQS and PEDro scales. Each provider
-generic folder contains exactly two files:
+scale folder contains exactly two official files:
 \begin{verbatim}
-inst/scales/<scale>/<provider>-generic/
+inst/scales/<scale>/
   prompt.md
   metadata.json
 \end{verbatim}
 The metadata file is authoritative for item identifiers, allowed decisions,
-included items, total-score rules, and the response schema. A model-specific
+included items, total-score rules, and the response schema. Experimental
 folder may be added only when its prompt has been separately tuned or validated.
 
 PEDro reports all 11 items, but item 1 is excluded from the official total.

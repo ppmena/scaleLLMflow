@@ -77,14 +77,13 @@ registry does not attempt to maintain a static list of every available model.
 
 Supported provider values are `gemini`, `openai`, and `claude` (with `chatgpt`
 as an OpenAI alias and `anthropic` as a Claude alias). Claude uses Anthropic's
-Messages API. The bundled MQS and PEDro Claude entries use the model identifier
-`claude-sonnet-4-20250514`; another Claude model can be passed and will use the
-corresponding scale fallback prompt.
+Messages API. The bundled MQS and PEDro prompts are scale-level and independent
+of the selected Claude model.
 
-Prompt selection is independent of model availability. The resolver looks for
-an exact registered model and then applies its fallback rules, ending with the
-scale's `generic` prompt. MQS currently uses one provider-neutral prompt rather
-than separate prompts for Gemini model variants.
+Prompt selection is independent of model availability. The official resolver
+uses exactly one accepted prompt per scale; the requested provider and model
+only control the API call. MQS therefore uses one provider-neutral prompt for
+all supported models.
 
 Generation and resilience options can be passed to `run_article()` and
 `run_dataset()`:
@@ -130,14 +129,17 @@ blocks are preserved as Markdown structures. This behaviour is controlled by
 without this structuring pass.
 
 ```text
-inst/scales/<scale>/<prompt_variant>/
+inst/scales/<scale>/
   prompt.md
   metadata.json
 ```
 
 The prompt contains the operational instructions for the LLM. `metadata.json`
 declares the formal item definition, allowed decisions, total-score rules, and
-the response schema. These two files must agree.
+the response schema. These two files must agree. Every official prompt must
+begin with a single `RUN_VERSION: <version>` line, and that value must exactly
+match `metadata.json$prompt_version`. A prompt without a matching version is
+rejected by the registry audit and resolver.
 
 The response schema is fail-closed: malformed JSON, missing items, unexpected
 decisions, or missing required fields are rejected rather than silently scored.
@@ -149,6 +151,7 @@ To inspect the registry:
 available_scales()
 resolved <- resolve_prompt("mqs", "gemini-3.6-flash")
 resolved$prompt_path
+resolved$prompt_version
 
 audit <- audit_model_registry(output_dir = "results/registry_audit")
 audit$checks
@@ -160,7 +163,7 @@ To add a scale, see [ADD_NEW_SCALE_SKILL.md](ADD_NEW_SCALE_SKILL.md).
 
 Prompts can be refined in a private training project without changing the
 package registry. Copy a scale prompt and its `metadata.json` to a local
-`scales/<scale>/<provider>-generic/` folder, run the articles into separate
+`scales/<scale>/` folder, run the articles into separate
 `iterations/iteration_N` directories, and compare them with a reviewed
 `ideal.csv`:
 
@@ -185,7 +188,7 @@ is returned for human review; no file is changed and no article is rerun:
 
 ```r
 proposal <- propose_prompt_revision(
-  prompt_path = "training/my_mqs/scales/mqs/gemini-generic/prompt.md",
+  prompt_path = "training/my_mqs/scales/mqs/prompt.md",
   comparison = comparison$comparison,
   reason_files = list.files(
     "training/my_mqs/iterations/iteration_1",
@@ -193,7 +196,7 @@ proposal <- propose_prompt_revision(
   ),
   provider = "gemini",
   model = "gemini-3.6-flash",
-  output_path = "training/my_mqs/scales/mqs/gemini-generic/prompt_proposal.md"
+  output_path = "training/my_mqs/scales/mqs/prompt_proposal.md"
 )
 cat(proposal$prompt)
 ```
@@ -217,13 +220,12 @@ project directory and pass it through `registry_dir`:
 my-study/
   scales/
     my_scale/
-      gemini-generic/
-        prompt.md
-        metadata.json
+      prompt.md
+      metadata.json
 ```
 
-The folder name is the scale name. Each prompt variant must contain both
-`prompt.md` and `metadata.json`, following the contract in
+The folder name is the scale name. The prompt and metadata must contain a
+matching `RUN_VERSION`/`prompt_version` pair, following the contract in
 `ADD_NEW_SCALE_SKILL.md`. The same external registry can be used with
 `available_scales()`, `resolve_prompt()`, `run_article()`, and `run_dataset()`:
 

@@ -23,6 +23,10 @@ test_that("provenance contains stable hashes and execution metadata", {
   expect_true(grepl("^[0-9a-f]{64}$", provenance$article_text_sha256))
   expect_equal(provenance$request_characters, nchar("prompt article"))
   expect_true(!is.null(provenance$r_version))
+  expect_equal(metadata$selected_prompt, "scale")
+  expect_equal(metadata$prompt_version, "v019")
+  expect_equal(provenance$selected_prompt, "scale")
+  expect_equal(provenance$prompt_version, "v019")
 })
 
 test_that("prompt snapshots record prompt version and hash", {
@@ -70,11 +74,11 @@ test_that("registry audit validates definitions and proposes duplicate unificati
   }
 })
 
-testthat::test_that("prompt registry resolves scales and model fallbacks", {
+testthat::test_that("prompt registry resolves scale-level prompts", {
   testthat::expect_true("mqs" %in% available_scales())
   testthat::expect_true("pedro" %in% available_scales())
   exact <- resolve_prompt("pedro", "gemini-2.5-flash")
-  testthat::expect_equal(exact$selected_model, "gemini-2.5-flash")
+  testthat::expect_equal(exact$selected_prompt, "scale")
   testthat::expect_true(file.exists(exact$prompt_path))
 })
 
