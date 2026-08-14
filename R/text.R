@@ -99,8 +99,8 @@ structure_article_markdown <- function(article_text, tables_advanced = TRUE) {
 #' @param prompt Optional local conversion prompt.
 #' @param ... Additional provider call settings.
 #' @export
-convert_article_markdown_llm <- function(article_text, provider = "gemini",
-                                          model = "gemini-3.6-flash", temperature = 0,
+convert_article_markdown_llm <- function(article_text, provider = "openai",
+                                          model = "gpt-5.6-luna", temperature = 0,
                                           prompt = NULL, max_chars = 50000, ...) {
   if (is.null(prompt)) {
     prompt <- paste(
@@ -163,7 +163,7 @@ split_article_text_chunks <- function(article_text, max_chars = 50000) {
 #' @export
 extract_pdf_text <- function(pdf_path, strip_references = TRUE, tables_advanced = TRUE,
                              cache_markdown = TRUE, conversion = "basic",
-                             provider = "gemini", model = "gemini-3.6-flash",
+                             provider = "openai", model = "gpt-5.6-luna",
                              conversion_prompt = NULL, temperature = 0,
                              max_chars = 50000, ...) {
   if (!file.exists(pdf_path)) {

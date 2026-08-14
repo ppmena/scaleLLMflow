@@ -17,7 +17,8 @@ run_llm(
   retry_wait_seconds = 1,
   retry_backoff = 2,
   rate_limit_seconds = 0,
-  response_schema = NULL
+  response_schema = NULL,
+  reasoning_effort = NULL
 )
 }
 \arguments{
@@ -46,6 +47,10 @@ run_llm(
 \item{rate_limit_seconds}{Minimum delay between requests in this R process.}
 
 \item{response_schema}{Optional registered response schema.}
+
+\item{reasoning_effort}{Optional Responses API reasoning effort, for example
+\code{"none"}, \code{"low"}, or \code{"medium"}. For GPT-5.6 with temperature, use
+\code{"none"} explicitly.}
 }
 \description{
 Call a supported LLM provider with user-owned API credentials.

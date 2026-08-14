@@ -6,8 +6,8 @@
 \usage{
 convert_article_markdown_llm(
   article_text,
-  provider = "gemini",
-  model = "gemini-3.6-flash",
+  provider = "openai",
+  model = "gpt-5.6-luna",
   temperature = 0,
   prompt = NULL,
   max_chars = 50000,

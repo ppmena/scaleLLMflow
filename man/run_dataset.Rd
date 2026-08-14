@@ -16,8 +16,8 @@ run_dataset(
   tables_advanced = TRUE,
   cache_markdown = TRUE,
   conversion = "basic",
-  conversion_provider = "gemini",
-  conversion_model = "gemini-3.6-flash",
+  conversion_provider = "openai",
+  conversion_model = "gpt-5.6-luna",
   conversion_prompt = NULL,
   max_articles = 0,
   max_chars = 50000,
@@ -32,6 +32,7 @@ run_dataset(
   retry_backoff = 2,
   rate_limit_seconds = 0,
   reference_csv = NULL,
+  reasoning_effort = NULL,
   validation_mode = c("free", "reference")
 )
 }
