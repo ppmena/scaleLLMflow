@@ -18,6 +18,7 @@ run_article(
   conversion_provider = "gemini",
   conversion_model = "gemini-3.6-flash",
   conversion_prompt = NULL,
+  max_chars = 50000,
   items = NULL,
   output_dir = NULL,
   temperature = 0,
@@ -61,6 +62,9 @@ generally gives better results for multi-column articles and complex layouts.}
 
 \item{conversion_provider, conversion_model, conversion_prompt}{Settings for the
 LLM used only to convert PDF text into Markdown.}
+
+\item{max_chars}{Maximum text size per LLM PDF-conversion call; larger PDFs
+are split and reassembled automatically.}
 
 \item{items}{Item ids to parse. Defaults to 1:10.}
 

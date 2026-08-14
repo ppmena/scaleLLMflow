@@ -15,6 +15,7 @@ extract_article_text(
   model = "gemini-3.6-flash",
   conversion_prompt = NULL,
   temperature = 0,
+  max_chars = 50000,
   ...
 )
 }
@@ -28,6 +29,8 @@ extract_article_text(
 \item{conversion}{PDF conversion mode passed to \code{extract_pdf_text()}.}
 
 \item{provider, model, conversion_prompt, temperature}{LLM conversion settings.}
+
+\item{max_chars}{Maximum text size per LLM conversion call.}
 }
 \description{
 Extract text from a supported article file.

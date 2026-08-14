@@ -19,7 +19,7 @@
 
 \title{\textbf{scaleLLMflow}\\[4pt]\large General LLM Workflows for Scientific Quality Scales}
 \author{Proyecto MQS}
-\date{Version 0.3.4\\[2pt] 2026-08-14}
+\date{Version 0.3.5\\[2pt] 2026-08-14}
 
 \begin{document}
 \maketitle
@@ -28,7 +28,7 @@
 \begin{description}
 \item[Package] scaleLLMflow
 \item[Title] General LLM Workflows for Scientific Quality Scales
-\item[Version] 0.3.4
+\item[Version] 0.3.5
 \item[Depends] R (>= 3.5.0)
 \item[Imports] httr2, jsonlite, openssl, pdftools, stringr
 \item[License] MIT + file LICENSE
@@ -137,7 +137,9 @@ order and Markdown structure, especially for multi-column articles.
 \function{extract\_pdf\_text}
 \manualpart{Description}Extracts text from a local PDF using \code{pdftools}. With
 \code{conversion = "llm"}, an LLM reconstructs reading order and Markdown structure;
-this generally gives better results for complex and multi-column articles.
+this generally gives better results for complex and multi-column articles. If the
+extracted text exceeds \code{max_chars} (50,000 by default), it is split at safe
+line boundaries, converted in several calls, and reassembled into one Markdown file.
 \manualpart{Arguments}\begin{description}\argitem{pdf_path}{Local PDF path.}\argitem{strip_references}{Whether to remove references.}\end{description}
 \manualpart{Value}Article text.
 

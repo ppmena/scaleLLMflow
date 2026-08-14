@@ -20,6 +20,7 @@ run_dataset(
   conversion_model = "gemini-3.6-flash",
   conversion_prompt = NULL,
   max_articles = 0,
+  max_chars = 50000,
   items = NULL,
   temperature = 0,
   top_p = 0.1,
@@ -56,6 +57,8 @@ conversion settings. LLM conversion generally gives better results for
 multi-column articles and complex layouts.}
 
 \item{max_articles}{Maximum pending PDFs to process. \code{0} means all.}
+
+\item{max_chars}{Maximum text size per LLM PDF-conversion call.}
 
 \item{max_retries, retry_wait_seconds, retry_backoff, rate_limit_seconds}{Reliability settings.}
 

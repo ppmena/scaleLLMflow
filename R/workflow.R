@@ -146,6 +146,8 @@ build_audit_log <- function(clean_id, provider, model, strip_references, call_lo
 #'   generally gives better results for multi-column articles and complex layouts.
 #' @param conversion_provider,conversion_model,conversion_prompt Settings for the
 #'   LLM used only to convert PDF text into Markdown.
+#' @param max_chars Maximum text size per LLM PDF-conversion call; larger PDFs
+#'   are split and reassembled automatically.
 #' @param items Item ids to parse. Defaults to 1:10.
 #' @param output_dir Optional output directory for an audit log.
 #' @param write_evidence Whether to write the per-article evidence CSV. Dataset
@@ -159,6 +161,7 @@ build_audit_log <- function(clean_id, provider, model, strip_references, call_lo
 run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini", model = "gemini-3.6-flash",
                         registry_dir = NULL, filetype = "auto", strip_references = TRUE, tables_advanced = TRUE, cache_markdown = TRUE,
                         conversion = "basic", conversion_provider = "gemini", conversion_model = "gemini-3.6-flash", conversion_prompt = NULL,
+                        max_chars = 50000,
                         items = NULL,
                         output_dir = NULL, temperature = 0, top_p = 0.1, timeout = 300,
                         api_key = NULL, project_id = NULL, pdf_path = NULL,
@@ -181,7 +184,7 @@ run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini",
     strip_references = strip_references, tables_advanced = tables_advanced,
     cache_markdown = cache_markdown, conversion = conversion,
     provider = conversion_provider, model = conversion_model,
-    conversion_prompt = conversion_prompt)
+    conversion_prompt = conversion_prompt, max_chars = max_chars)
 
   if (nchar(trimws(article_text)) < 100) {
     stop("Article without sufficient extractable text: ", article_path, call. = FALSE)
@@ -298,6 +301,7 @@ run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini",
 #' @param conversion,conversion_provider,conversion_model,conversion_prompt PDF
 #'   conversion settings. LLM conversion generally gives better results for
 #'   multi-column articles and complex layouts.
+#' @param max_chars Maximum text size per LLM PDF-conversion call.
 #' @param max_retries,retry_wait_seconds,retry_backoff,rate_limit_seconds Reliability settings.
 #' @param reference_csv Optional reviewed-score CSV.
 #' @param validation_mode Either `"free"` or `"reference"`.
@@ -308,6 +312,7 @@ run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini",
 run_dataset <- function(articles_dir, scale = "mqs", provider = "gemini", model = "gemini-3.6-flash",
                         output_dir, registry_dir = NULL, filetype = "auto", strip_references = TRUE, tables_advanced = TRUE, cache_markdown = TRUE,
                         conversion = "basic", conversion_provider = "gemini", conversion_model = "gemini-3.6-flash", conversion_prompt = NULL, max_articles = 0,
+                        max_chars = 50000,
                         items = NULL, temperature = 0, top_p = 0.1, timeout = 300,
                         api_key = NULL, project_id = NULL, max_retries = 3,
                         retry_wait_seconds = 1, retry_backoff = 2,
@@ -394,6 +399,7 @@ run_dataset <- function(articles_dir, scale = "mqs", provider = "gemini", model 
         conversion_provider = conversion_provider,
         conversion_model = conversion_model,
         conversion_prompt = conversion_prompt,
+        max_chars = max_chars,
         items = items,
         output_dir = output_dir,
         temperature = temperature,

@@ -10,6 +10,7 @@ convert_article_markdown_llm(
   model = "gemini-3.6-flash",
   temperature = 0,
   prompt = NULL,
+  max_chars = 50000,
   ...
 )
 }

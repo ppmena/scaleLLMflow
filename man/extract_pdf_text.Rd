@@ -14,6 +14,7 @@ extract_pdf_text(
   model = "gemini-3.6-flash",
   conversion_prompt = NULL,
   temperature = 0,
+  max_chars = 50000,
   ...
 )
 }
@@ -30,6 +31,9 @@ extract_pdf_text(
 usually produces better reading order and Markdown structure for multi-column articles.}
 
 \item{provider, model, conversion_prompt, temperature}{LLM conversion settings.}
+
+\item{max_chars}{Maximum extracted-text size per LLM conversion call. Larger
+PDFs are split into line-safe chunks and reassembled into one Markdown file.}
 }
 \description{
 Extract text from a PDF article.

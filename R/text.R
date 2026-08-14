@@ -101,7 +101,7 @@ structure_article_markdown <- function(article_text, tables_advanced = TRUE) {
 #' @export
 convert_article_markdown_llm <- function(article_text, provider = "gemini",
                                           model = "gemini-3.6-flash", temperature = 0,
-                                          prompt = NULL, ...) {
+                                          prompt = NULL, max_chars = 50000, ...) {
   if (is.null(prompt)) {
     prompt <- paste(
       "Convert the following PDF-extracted academic article into faithful Markdown.",
@@ -112,12 +112,38 @@ convert_article_markdown_llm <- function(article_text, provider = "gemini",
       "Return only the Markdown document, without commentary.",
       "--- SOURCE TEXT ---", article_text, "--- END SOURCE TEXT ---", sep = "\n\n"
     )
+  } else if (grepl("{article_text}", prompt, fixed = TRUE)) {
+    prompt <- sub("{article_text}", article_text, prompt, fixed = TRUE)
   }
   result <- run_llm(prompt, provider = provider, model = model,
     temperature = temperature, ...)
   result <- sub("^```(?:markdown|md)?\\s*", "", result, ignore.case = TRUE)
   result <- sub("\\s*```$", "", result)
   result
+}
+
+split_article_text_chunks <- function(article_text, max_chars = 50000) {
+  if (!is.numeric(max_chars) || length(max_chars) != 1 || !is.finite(max_chars) || max_chars < 1000) {
+    stop("max_chars must be a finite number greater than or equal to 1000.", call. = FALSE)
+  }
+  if (nchar(article_text) <= max_chars) return(article_text)
+  lines <- strsplit(gsub("\\r\\n?", "\\n", article_text), "\n", fixed = TRUE)[[1]]
+  lines <- unlist(lapply(lines, function(line) {
+    if (nchar(line) <= max_chars) return(line)
+    starts <- seq.int(1L, nchar(line), by = max_chars)
+    substring(line, starts, pmin(starts + max_chars - 1L, nchar(line)))
+  }), use.names = FALSE)
+  chunks <- character(0); current <- character(0); current_chars <- 0
+  for (line in lines) {
+    line_chars <- nchar(line) + 1L
+    if (length(current) > 0 && current_chars + line_chars > max_chars) {
+      chunks <- c(chunks, paste(current, collapse = "\n"))
+      current <- character(0); current_chars <- 0
+    }
+    current <- c(current, line); current_chars <- current_chars + line_chars
+  }
+  if (length(current) > 0) chunks <- c(chunks, paste(current, collapse = "\n"))
+  chunks
 }
 
 #' Extract text from a PDF article.
@@ -129,11 +155,14 @@ convert_article_markdown_llm <- function(article_text, provider = "gemini",
 #' @param conversion PDF conversion mode: `"basic"` or `"llm"`. LLM conversion
 #' usually produces better reading order and Markdown structure for multi-column articles.
 #' @param provider,model,conversion_prompt,temperature LLM conversion settings.
+#' @param max_chars Maximum extracted-text size per LLM conversion call. Larger
+#' PDFs are split into line-safe chunks and reassembled into one Markdown file.
 #' @export
 extract_pdf_text <- function(pdf_path, strip_references = TRUE, tables_advanced = TRUE,
                              cache_markdown = TRUE, conversion = "basic",
                              provider = "gemini", model = "gemini-3.6-flash",
-                             conversion_prompt = NULL, temperature = 0, ...) {
+                             conversion_prompt = NULL, temperature = 0,
+                             max_chars = 50000, ...) {
   if (!file.exists(pdf_path)) {
     stop("PDF not found: ", pdf_path, call. = FALSE)
   }
@@ -145,8 +174,11 @@ extract_pdf_text <- function(pdf_path, strip_references = TRUE, tables_advanced 
 
   conversion <- match.arg(conversion, c("basic", "llm"))
   markdown_text <- if (conversion == "llm") {
-    convert_article_markdown_llm(article_text, provider = provider, model = model,
-      temperature = temperature, prompt = conversion_prompt, ...)
+    chunks <- split_article_text_chunks(article_text, max_chars = max_chars)
+    paste(vapply(chunks, function(chunk) convert_article_markdown_llm(
+      chunk, provider = provider, model = model, temperature = temperature,
+      prompt = conversion_prompt, max_chars = max_chars, ...), character(1)),
+      collapse = "\n\n")
   } else structure_article_markdown(article_text, tables_advanced = tables_advanced)
   if (isTRUE(cache_markdown)) {
     md_path <- file.path(dirname(pdf_path), paste0(tools::file_path_sans_ext(basename(pdf_path)), ".md"))
@@ -162,6 +194,7 @@ extract_pdf_text <- function(pdf_path, strip_references = TRUE, tables_advanced 
 #' @param strip_references Whether to remove the reference section before sending text to an LLM.
 #' @param conversion PDF conversion mode passed to `extract_pdf_text()`.
 #' @param provider,model,conversion_prompt,temperature LLM conversion settings.
+#' @param max_chars Maximum text size per LLM conversion call.
 #' @details Files are read from the local filesystem. PDF, TXT, and Markdown
 #' inputs are supported.
 #' @export
@@ -169,7 +202,7 @@ extract_article_text <- function(file_path, filetype = "auto", strip_references 
                                  tables_advanced = TRUE, cache_markdown = TRUE,
                                  conversion = "basic", provider = "gemini",
                                  model = "gemini-3.6-flash", conversion_prompt = NULL,
-                                 temperature = 0, ...) {
+                                 temperature = 0, max_chars = 50000, ...) {
   if (!file.exists(file_path)) {
     stop("Article file not found: ", file_path, call. = FALSE)
   }
@@ -186,7 +219,8 @@ extract_article_text <- function(file_path, filetype = "auto", strip_references 
     return(extract_pdf_text(file_path, strip_references = strip_references,
       tables_advanced = tables_advanced, cache_markdown = cache_markdown,
       conversion = conversion, provider = provider, model = model,
-      conversion_prompt = conversion_prompt, temperature = temperature, ...))
+      conversion_prompt = conversion_prompt, temperature = temperature,
+      max_chars = max_chars, ...))
   }
 
   article_text <- paste(readLines(file_path, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
