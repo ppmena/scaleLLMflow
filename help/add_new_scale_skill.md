@@ -1,8 +1,8 @@
 # Skill: add a document-assessment scale to scaleLLMflow
 
-**Linked package version:** `scaleLLMflow 0.3.3`  
+**Linked package version:** `scaleLLMflow 0.3.4`  
 **Compatibility:** This guide describes the registry, Markdown extraction, and
-local prompt-training interfaces available in version `0.3.3`. Review the
+local prompt-training interfaces available in version `0.3.4`. Review the
 package changelog and this version marker when using a later release.
 
 ## Purpose

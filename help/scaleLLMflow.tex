@@ -19,7 +19,7 @@
 
 \title{\textbf{scaleLLMflow}\\[4pt]\large General LLM Workflows for Scientific Quality Scales}
 \author{Proyecto MQS}
-\date{Version 0.2.0\\[2pt] 2026-08-11}
+\date{Version 0.3.4\\[2pt] 2026-08-14}
 
 \begin{document}
 \maketitle
@@ -28,7 +28,7 @@
 \begin{description}
 \item[Package] scaleLLMflow
 \item[Title] General LLM Workflows for Scientific Quality Scales
-\item[Version] 0.2.0
+\item[Version] 0.3.4
 \item[Depends] R (>= 3.5.0)
 \item[Imports] httr2, jsonlite, openssl, pdftools, stringr
 \item[License] MIT + file LICENSE
@@ -127,15 +127,25 @@ and proposed or applied unifications.
 \function{extract\_article\_text}
 \manualpart{Description}Reads local Markdown or text articles and optionally removes
 the references section. PDF input is supported through \code{extract_pdf_text}.
+For PDF articles, \code{conversion = "llm"} generally produces better reading
+order and Markdown structure, especially for multi-column articles.
 \manualpart{Arguments}\begin{description}
 \argitem{file_path}{Local article path.}\argitem{filetype}{One of \code{auto}, \code{txt}, \code{md}, or \code{pdf}.}\argitem{strip_references}{Whether to remove references before model submission.}
 \end{description}
 \manualpart{Value}Article text.
 
 \function{extract\_pdf\_text}
-\manualpart{Description}Extracts text from a local PDF using \code{pdftools}.
+\manualpart{Description}Extracts text from a local PDF using \code{pdftools}. With
+\code{conversion = "llm"}, an LLM reconstructs reading order and Markdown structure;
+this generally gives better results for complex and multi-column articles.
 \manualpart{Arguments}\begin{description}\argitem{pdf_path}{Local PDF path.}\argitem{strip_references}{Whether to remove references.}\end{description}
 \manualpart{Value}Article text.
+
+\function{convert\_article\_markdown\_llm}
+\manualpart{Description}Converts extracted article text into faithful Markdown
+with an LLM, reconstructing reading order, headings, and clearly identified tables.
+This generally improves results for complex PDF layouts.
+\manualpart{Value}Markdown text returned by the configured provider.
 
 \function{strip\_references\_section}
 \manualpart{Description}Removes a detected references or bibliography section.

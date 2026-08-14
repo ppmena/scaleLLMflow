@@ -15,6 +15,10 @@ run_dataset(
   strip_references = TRUE,
   tables_advanced = TRUE,
   cache_markdown = TRUE,
+  conversion = "basic",
+  conversion_provider = "gemini",
+  conversion_model = "gemini-3.6-flash",
+  conversion_prompt = NULL,
   max_articles = 0,
   items = NULL,
   temperature = 0,
@@ -46,6 +50,10 @@ run_dataset(
 \item{filetype}{One of \code{"auto"}, \code{"pdf"}, \code{"txt"}, or \code{"md"}.}
 
 \item{strip_references, items, temperature, top_p, timeout, api_key, project_id}{Provider and parsing settings.}
+
+\item{conversion, conversion_provider, conversion_model, conversion_prompt}{PDF
+conversion settings. LLM conversion generally gives better results for
+multi-column articles and complex layouts.}
 
 \item{max_articles}{Maximum pending PDFs to process. \code{0} means all.}
 

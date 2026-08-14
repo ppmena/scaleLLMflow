@@ -9,7 +9,13 @@ extract_article_text(
   filetype = "auto",
   strip_references = TRUE,
   tables_advanced = TRUE,
-  cache_markdown = TRUE
+  cache_markdown = TRUE,
+  conversion = "basic",
+  provider = "gemini",
+  model = "gemini-3.6-flash",
+  conversion_prompt = NULL,
+  temperature = 0,
+  ...
 )
 }
 \arguments{
@@ -18,6 +24,10 @@ extract_article_text(
 \item{filetype}{One of \code{"auto"}, \code{"pdf"}, \code{"txt"}, or \code{"md"}.}
 
 \item{strip_references}{Whether to remove the reference section before sending text to an LLM.}
+
+\item{conversion}{PDF conversion mode passed to \code{extract_pdf_text()}.}
+
+\item{provider, model, conversion_prompt, temperature}{LLM conversion settings.}
 }
 \description{
 Extract text from a supported article file.

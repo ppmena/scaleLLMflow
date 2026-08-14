@@ -142,6 +142,10 @@ build_audit_log <- function(clean_id, provider, model, strip_references, call_lo
 #'   table-like blocks as Markdown before the LLM call.
 #' @param cache_markdown Whether PDF extraction writes a same-name `.md` cache
 #'   beside the source PDF for reuse by `filetype = "auto"`.
+#' @param conversion PDF conversion mode: `"basic"` or `"llm"`. LLM conversion
+#'   generally gives better results for multi-column articles and complex layouts.
+#' @param conversion_provider,conversion_model,conversion_prompt Settings for the
+#'   LLM used only to convert PDF text into Markdown.
 #' @param items Item ids to parse. Defaults to 1:10.
 #' @param output_dir Optional output directory for an audit log.
 #' @param write_evidence Whether to write the per-article evidence CSV. Dataset
@@ -153,7 +157,9 @@ build_audit_log <- function(clean_id, provider, model, strip_references, call_lo
 #' @param validation_mode Either `"free"` or `"reference"`.
 #' @export
 run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini", model = "gemini-3.6-flash",
-                        registry_dir = NULL, filetype = "auto", strip_references = TRUE, tables_advanced = TRUE, cache_markdown = TRUE, items = NULL,
+                        registry_dir = NULL, filetype = "auto", strip_references = TRUE, tables_advanced = TRUE, cache_markdown = TRUE,
+                        conversion = "basic", conversion_provider = "gemini", conversion_model = "gemini-3.6-flash", conversion_prompt = NULL,
+                        items = NULL,
                         output_dir = NULL, temperature = 0, top_p = 0.1, timeout = 300,
                         api_key = NULL, project_id = NULL, pdf_path = NULL,
                         max_retries = 3, retry_wait_seconds = 1, retry_backoff = 2,
@@ -173,7 +179,9 @@ run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini",
   prompt_text <- paste(readLines(resolved$prompt_path, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
   article_text <- extract_article_text(article_path, filetype = filetype,
     strip_references = strip_references, tables_advanced = tables_advanced,
-    cache_markdown = cache_markdown)
+    cache_markdown = cache_markdown, conversion = conversion,
+    provider = conversion_provider, model = conversion_model,
+    conversion_prompt = conversion_prompt)
 
   if (nchar(trimws(article_text)) < 100) {
     stop("Article without sufficient extractable text: ", article_path, call. = FALSE)
@@ -287,6 +295,9 @@ run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini",
 #' @param model Requested model.
 #' @param registry_dir Optional prompt registry root.
 #' @param strip_references,items,temperature,top_p,timeout,api_key,project_id Provider and parsing settings.
+#' @param conversion,conversion_provider,conversion_model,conversion_prompt PDF
+#'   conversion settings. LLM conversion generally gives better results for
+#'   multi-column articles and complex layouts.
 #' @param max_retries,retry_wait_seconds,retry_backoff,rate_limit_seconds Reliability settings.
 #' @param reference_csv Optional reviewed-score CSV.
 #' @param validation_mode Either `"free"` or `"reference"`.
@@ -295,7 +306,8 @@ run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini",
 #' consolidated evidence report, and errors when any occurred.
 #' @export
 run_dataset <- function(articles_dir, scale = "mqs", provider = "gemini", model = "gemini-3.6-flash",
-                        output_dir, registry_dir = NULL, filetype = "auto", strip_references = TRUE, tables_advanced = TRUE, cache_markdown = TRUE, max_articles = 0,
+                        output_dir, registry_dir = NULL, filetype = "auto", strip_references = TRUE, tables_advanced = TRUE, cache_markdown = TRUE,
+                        conversion = "basic", conversion_provider = "gemini", conversion_model = "gemini-3.6-flash", conversion_prompt = NULL, max_articles = 0,
                         items = NULL, temperature = 0, top_p = 0.1, timeout = 300,
                         api_key = NULL, project_id = NULL, max_retries = 3,
                         retry_wait_seconds = 1, retry_backoff = 2,
@@ -378,6 +390,10 @@ run_dataset <- function(articles_dir, scale = "mqs", provider = "gemini", model 
         strip_references = strip_references,
         tables_advanced = tables_advanced,
         cache_markdown = cache_markdown,
+        conversion = conversion,
+        conversion_provider = conversion_provider,
+        conversion_model = conversion_model,
+        conversion_prompt = conversion_prompt,
         items = items,
         output_dir = output_dir,
         temperature = temperature,

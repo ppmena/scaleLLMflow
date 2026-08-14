@@ -8,13 +8,28 @@ extract_pdf_text(
   pdf_path,
   strip_references = TRUE,
   tables_advanced = TRUE,
-  cache_markdown = TRUE
+  cache_markdown = TRUE,
+  conversion = "basic",
+  provider = "gemini",
+  model = "gemini-3.6-flash",
+  conversion_prompt = NULL,
+  temperature = 0,
+  ...
 )
 }
 \arguments{
 \item{pdf_path}{Path to a PDF article.}
 
 \item{strip_references}{Whether to remove the reference section before sending text to an LLM.}
+
+\item{tables_advanced}{Whether to apply local table heuristics.}
+
+\item{cache_markdown}{Whether to cache PDF conversion beside the source PDF.}
+
+\item{conversion}{PDF conversion mode: \code{"basic"} or \code{"llm"}. LLM conversion
+usually produces better reading order and Markdown structure for multi-column articles.}
+
+\item{provider, model, conversion_prompt, temperature}{LLM conversion settings.}
 }
 \description{
 Extract text from a PDF article.

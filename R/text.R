@@ -44,7 +44,11 @@ strip_references_section <- function(article_text) {
 #' @export
 structure_article_markdown <- function(article_text, tables_advanced = TRUE) {
   if (!is.logical(tables_advanced) || length(tables_advanced) != 1) stop("tables_advanced must be TRUE or FALSE.", call. = FALSE)
-  lines <- trimws(gsub("\\r\\n?", "\\n", article_text))
+  # PDF extraction may leave literal tabulators in otherwise plain text.
+  # Normalize them without changing the original line/column ordering.
+  raw_lines <- strsplit(gsub("\\r\\n?", "\\n", article_text), "\n", fixed = TRUE)[[1]]
+  lines <- gsub("^[[:space:]]+|[[:space:]]+$", "",
+    gsub("\\t+", " ", raw_lines))
   lines <- lines[nzchar(lines)]
   out <- character(0); i <- 1L
   heading <- "^(?:[0-9]+(?:\\.[0-9]+)*[.)]?|[IVXLC]+[.)])\\s+(.+)$"
@@ -59,24 +63,16 @@ structure_article_markdown <- function(article_text, tables_advanced = TRUE) {
   )
   is_heading <- function(x, position) {
     normalized <- tolower(gsub("[:.]$", "", trimws(x)))
-    grepl("^#{1,6}\\s+", x) ||
-      grepl(heading, x, perl = TRUE) ||
-      normalized %in% c("abstract", "resumen", "introduction", "background",
-        "objectives", "aims", "methods", "methodology", "design",
-        "participants", "sample", "procedure", "intervention", "measures",
-        "instruments", "outcomes", "results", "discussion", "conclusions",
-        "limitations", "references", "bibliography", "statistical analysis",
-        "data analysis", "appendix", "supplementary materials") ||
+    grepl("^#{1,6}\\s+", x) || grepl(heading, x, perl = TRUE) ||
+      normalized %in% c("abstract", "resumen", "introduction", "background", "objectives", "aims", "methods", "methodology", "design", "participants", "sample", "procedure", "intervention", "measures", "instruments", "outcomes", "results", "discussion", "conclusions", "limitations", "references", "bibliography", "statistical analysis", "data analysis", "appendix", "supplementary materials") ||
       grepl(section_heading, trimws(x), perl = TRUE, ignore.case = TRUE) ||
-      (position <= 3L && nchar(x) >= 8L && nchar(x) <= 180L &&
-       !grepl("[.!?]$", x) && grepl("[A-Za-z]", x))
+      (position <= 3L && nchar(x) >= 8L && nchar(x) <= 180L && !grepl("[.!?]$", x) && grepl("[A-Za-z]", x))
   }
   while (i <= length(lines)) {
     x <- lines[[i]]
     if (is_heading(x, i)) {
-      if (grepl("^#{1,6}\\s+", x)) {
-        out <- c(out, x)
-      } else {
+      if (grepl("^#{1,6}\\s+", x)) out <- c(out, x)
+      else {
         label <- if (grepl(heading, x, perl = TRUE)) sub(heading, "\\1", x, perl = TRUE) else x
         level <- if (i <= 3L || grepl("^(?:abstract|introduction|methods?|results?|discussion|conclusions?)", label, ignore.case = TRUE)) 2 else 3
         out <- c(out, paste0(strrep("#", level), " ", trimws(label)))
@@ -95,13 +91,49 @@ structure_article_markdown <- function(article_text, tables_advanced = TRUE) {
   paste(out, collapse="\n\n")
 }
 
+#' Convert extracted article text to faithful Markdown with an LLM.
+#' @param article_text Extracted article text.
+#' @param provider LLM provider.
+#' @param model Provider model.
+#' @param temperature Sampling temperature.
+#' @param prompt Optional local conversion prompt.
+#' @param ... Additional provider call settings.
+#' @export
+convert_article_markdown_llm <- function(article_text, provider = "gemini",
+                                          model = "gemini-3.6-flash", temperature = 0,
+                                          prompt = NULL, ...) {
+  if (is.null(prompt)) {
+    prompt <- paste(
+      "Convert the following PDF-extracted academic article into faithful Markdown.",
+      "Reconstruct reading order for multi-column pages, preserve every word, number,", 
+      "table and heading, and do not summarize, correct, or invent content.",
+      "Use Markdown headings only when the source contains a real section heading.",
+      "Represent tables as Markdown tables only when a table is clearly present.",
+      "Return only the Markdown document, without commentary.",
+      "--- SOURCE TEXT ---", article_text, "--- END SOURCE TEXT ---", sep = "\n\n"
+    )
+  }
+  result <- run_llm(prompt, provider = provider, model = model,
+    temperature = temperature, ...)
+  result <- sub("^```(?:markdown|md)?\\s*", "", result, ignore.case = TRUE)
+  result <- sub("\\s*```$", "", result)
+  result
+}
+
 #' Extract text from a PDF article.
 #'
 #' @param pdf_path Path to a PDF article.
 #' @param strip_references Whether to remove the reference section before sending text to an LLM.
+#' @param tables_advanced Whether to apply local table heuristics.
+#' @param cache_markdown Whether to cache PDF conversion beside the source PDF.
+#' @param conversion PDF conversion mode: `"basic"` or `"llm"`. LLM conversion
+#' usually produces better reading order and Markdown structure for multi-column articles.
+#' @param provider,model,conversion_prompt,temperature LLM conversion settings.
 #' @export
 extract_pdf_text <- function(pdf_path, strip_references = TRUE, tables_advanced = TRUE,
-                             cache_markdown = TRUE) {
+                             cache_markdown = TRUE, conversion = "basic",
+                             provider = "gemini", model = "gemini-3.6-flash",
+                             conversion_prompt = NULL, temperature = 0, ...) {
   if (!file.exists(pdf_path)) {
     stop("PDF not found: ", pdf_path, call. = FALSE)
   }
@@ -111,7 +143,11 @@ extract_pdf_text <- function(pdf_path, strip_references = TRUE, tables_advanced 
     article_text <- strip_references_section(article_text)
   }
 
-  markdown_text <- structure_article_markdown(article_text, tables_advanced = tables_advanced)
+  conversion <- match.arg(conversion, c("basic", "llm"))
+  markdown_text <- if (conversion == "llm") {
+    convert_article_markdown_llm(article_text, provider = provider, model = model,
+      temperature = temperature, prompt = conversion_prompt, ...)
+  } else structure_article_markdown(article_text, tables_advanced = tables_advanced)
   if (isTRUE(cache_markdown)) {
     md_path <- file.path(dirname(pdf_path), paste0(tools::file_path_sans_ext(basename(pdf_path)), ".md"))
     writeLines(markdown_text, md_path, useBytes = TRUE)
@@ -124,11 +160,16 @@ extract_pdf_text <- function(pdf_path, strip_references = TRUE, tables_advanced 
 #' @param file_path Path to a `.pdf`, `.txt`, or `.md` article file.
 #' @param filetype One of `"auto"`, `"pdf"`, `"txt"`, or `"md"`.
 #' @param strip_references Whether to remove the reference section before sending text to an LLM.
+#' @param conversion PDF conversion mode passed to `extract_pdf_text()`.
+#' @param provider,model,conversion_prompt,temperature LLM conversion settings.
 #' @details Files are read from the local filesystem. PDF, TXT, and Markdown
 #' inputs are supported.
 #' @export
 extract_article_text <- function(file_path, filetype = "auto", strip_references = TRUE,
-                                 tables_advanced = TRUE, cache_markdown = TRUE) {
+                                 tables_advanced = TRUE, cache_markdown = TRUE,
+                                 conversion = "basic", provider = "gemini",
+                                 model = "gemini-3.6-flash", conversion_prompt = NULL,
+                                 temperature = 0, ...) {
   if (!file.exists(file_path)) {
     stop("Article file not found: ", file_path, call. = FALSE)
   }
@@ -143,7 +184,9 @@ extract_article_text <- function(file_path, filetype = "auto", strip_references 
 
   if (filetype == "pdf") {
     return(extract_pdf_text(file_path, strip_references = strip_references,
-      tables_advanced = tables_advanced, cache_markdown = cache_markdown))
+      tables_advanced = tables_advanced, cache_markdown = cache_markdown,
+      conversion = conversion, provider = provider, model = model,
+      conversion_prompt = conversion_prompt, temperature = temperature, ...))
   }
 
   article_text <- paste(readLines(file_path, warn = FALSE, encoding = "UTF-8"), collapse = "\n")

@@ -14,6 +14,10 @@ run_article(
   strip_references = TRUE,
   tables_advanced = TRUE,
   cache_markdown = TRUE,
+  conversion = "basic",
+  conversion_provider = "gemini",
+  conversion_model = "gemini-3.6-flash",
+  conversion_prompt = NULL,
   items = NULL,
   output_dir = NULL,
   temperature = 0,
@@ -51,6 +55,12 @@ table-like blocks as Markdown before the LLM call.}
 
 \item{cache_markdown}{Whether PDF extraction writes a same-name \code{.md} cache
 beside the source PDF for reuse by \code{filetype = "auto"}.}
+
+\item{conversion}{PDF conversion mode: \code{"basic"} or \code{"llm"}. LLM conversion
+generally gives better results for multi-column articles and complex layouts.}
+
+\item{conversion_provider, conversion_model, conversion_prompt}{Settings for the
+LLM used only to convert PDF text into Markdown.}
 
 \item{items}{Item ids to parse. Defaults to 1:10.}
 
