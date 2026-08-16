@@ -11,8 +11,8 @@ resolve_prompt(scale, model, provider = NULL, registry_dir = NULL)
 
 \item{model}{Requested model name.}
 
-\item{provider}{Optional provider. When supplied, \verb{<provider>-generic} is
-preferred after model-specific matching.}
+\item{provider}{Optional provider used only for the API call. It does not
+select a prompt.}
 
 \item{registry_dir}{Optional registry root. Defaults to bundled package prompts.}
 }
@@ -21,5 +21,7 @@ A list containing prompt path, model folder, match strategy, and metadata.
 }
 \description{
 Resolution order is exact model, same model family token, same numeric version,
-\code{generic}, and finally closest available folder name by edit distance.
+The accepted prompt is always the scale-level prompt in
+\code{scales/<scale>/prompt.md}, with its metadata in the sibling
+\code{metadata.json}. No model- or provider-specific fallback is used.
 }

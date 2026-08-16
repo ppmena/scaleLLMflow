@@ -13,7 +13,14 @@ run_dataset(
   registry_dir = NULL,
   filetype = "auto",
   strip_references = TRUE,
+  tables_advanced = TRUE,
+  cache_markdown = TRUE,
+  conversion = "basic",
+  conversion_provider = "openai",
+  conversion_model = "gpt-5.6-luna",
+  conversion_prompt = NULL,
   max_articles = 0,
+  max_chars = 50000,
   items = NULL,
   temperature = 0,
   top_p = 0.1,
@@ -25,6 +32,7 @@ run_dataset(
   retry_backoff = 2,
   rate_limit_seconds = 0,
   reference_csv = NULL,
+  reasoning_effort = NULL,
   validation_mode = c("free", "reference")
 )
 }
@@ -45,7 +53,13 @@ run_dataset(
 
 \item{strip_references, items, temperature, top_p, timeout, api_key, project_id}{Provider and parsing settings.}
 
+\item{conversion, conversion_provider, conversion_model, conversion_prompt}{PDF
+conversion settings. LLM conversion generally gives better results for
+multi-column articles and complex layouts.}
+
 \item{max_articles}{Maximum pending PDFs to process. \code{0} means all.}
+
+\item{max_chars}{Maximum text size per LLM PDF-conversion call.}
 
 \item{max_retries, retry_wait_seconds, retry_backoff, rate_limit_seconds}{Reliability settings.}
 

@@ -1,5 +1,5 @@
-# Audit the local scale/model registry and optionally consolidate exact prompt
-# duplicates. This operates only on local registry files.
+# Audit the local scale-level prompt registry and optionally consolidate exact
+# duplicates in experimental folders. This operates only on local files.
 
 prompt_hash <- function(path) {
   as.character(tools::md5sum(path))
@@ -11,7 +11,7 @@ registry_check <- function(scale, model, check, status, message) {
     Message = message, stringsAsFactors = FALSE)
 }
 
-#' Audit every registered scale and model prompt.
+#' Audit every registered scale prompt.
 #'
 #' @param registry_dir Optional registry root. Defaults to bundled prompts.
 #' @param output_dir Optional directory for audit and unification CSV reports.
@@ -31,11 +31,36 @@ audit_model_registry <- function(registry_dir = NULL, output_dir = NULL,
   records <- list()
   for (scale in available_scales(root)) {
     scale_dir <- file.path(root, scale)
-    models <- registered_prompt_folders(scale, root)
-    if (length(models) == 0) {
-      records[[length(records) + 1]] <- registry_check(scale, "", "model_folders", "ERROR", "No model folders found.")
+    canonical_prompt <- file.path(scale_dir, "prompt.md")
+    canonical_metadata <- file.path(scale_dir, "metadata.json")
+    if (file.exists(canonical_prompt) || file.exists(canonical_metadata)) {
+      if (!file.exists(canonical_prompt) || !file.exists(canonical_metadata)) {
+        records[[length(records) + 1]] <- registry_check(scale, "scale", "files", "ERROR", "Scale-level prompt and metadata.json must both be present.")
+        next
+      }
+      metadata <- tryCatch(read_prompt_metadata(scale_dir), error = function(e) e)
+      if (inherits(metadata, "condition")) {
+        records[[length(records) + 1]] <- registry_check(scale, "scale", "metadata_json", "ERROR", conditionMessage(metadata))
+        next
+      }
+      version_result <- tryCatch(validate_prompt_version(canonical_prompt, metadata), error = function(e) e)
+      records[[length(records) + 1]] <- registry_check(scale, "scale", "run_version",
+        if (inherits(version_result, "condition")) "ERROR" else "OK",
+        if (inherits(version_result, "condition")) conditionMessage(version_result) else paste0("Accepted prompt version: ", version_result))
+      definition_result <- tryCatch({ validate_scale_definition(metadata); NULL }, error = function(e) e)
+      records[[length(records) + 1]] <- registry_check(scale, "scale", "scale_definition",
+        if (is.null(definition_result)) "OK" else "ERROR",
+        if (is.null(definition_result)) "Formal item and total definition is valid." else conditionMessage(definition_result))
+      records[[length(records) + 1]] <- registry_check(scale, "scale", "response_schema",
+        if (!is.null(metadata$response_schema) && !is.null(metadata$response_schema$required_item_keys)) "OK" else "ERROR",
+        if (!is.null(metadata$response_schema) && !is.null(metadata$response_schema$required_item_keys)) "Response schema declares required items." else "Missing response_schema.required_item_keys.")
+      records[[length(records) + 1]] <- registry_check(scale, "scale", "prompt_hash", "INFO", prompt_hash(canonical_prompt))
       next
     }
+    records[[length(records) + 1]] <- registry_check(scale, "scale", "files", "ERROR",
+      "Scale-level prompt.md and metadata.json are required; model/provider folders are not supported.")
+    next
+    models <- character(0)
     for (model in models) {
       model_dir <- file.path(scale_dir, model)
       prompt_path <- file.path(model_dir, "prompt.md")
@@ -54,6 +79,10 @@ audit_model_registry <- function(registry_dir = NULL, output_dir = NULL,
         next
       }
       records[[length(records) + 1]] <- registry_check(scale, model, "files", "OK", "prompt.md and metadata.json are present.")
+      version_result <- tryCatch(validate_prompt_version(prompt_path, metadata), error = function(e) e)
+      records[[length(records) + 1]] <- registry_check(scale, model, "run_version",
+        if (inherits(version_result, "condition")) "ERROR" else "OK",
+        if (inherits(version_result, "condition")) conditionMessage(version_result) else paste0("Prompt version: ", version_result))
       if (!identical(tolower(as.character(metadata$scale)), tolower(scale))) {
         records[[length(records) + 1]] <- registry_check(scale, model, "metadata_scale", "ERROR", "metadata scale does not match its folder.")
       }

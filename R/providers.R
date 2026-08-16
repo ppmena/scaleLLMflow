@@ -154,7 +154,7 @@ call_gemini <- function(prompt, model, temperature = 0, top_p = 0.1, timeout = 3
 }
 
 call_openai <- function(prompt, model, temperature = 0, timeout = 300, api_key = NULL,
-                        project_id = NULL, response_schema = NULL) {
+                        project_id = NULL, response_schema = NULL, reasoning_effort = NULL) {
   if (is.null(api_key) || !nzchar(api_key)) {
     api_key <- get_required_env("OPENAI_API_KEY")
   }
@@ -164,9 +164,13 @@ call_openai <- function(prompt, model, temperature = 0, timeout = 300, api_key =
 
   body <- list(
     model = model,
-    input = prompt,
-    temperature = temperature
+    input = prompt
   )
+  # GPT-5-family reasoning models reject the temperature parameter. Their
+  # sampling behavior is controlled by the model, so omit it for compatibility.
+  if (!grepl("^gpt-5", tolower(model)) || identical(reasoning_effort, "none")) {
+    body$temperature <- temperature
+  }
   if (!is.null(response_schema)) {
     body$text <- list(format = list(
       type = "json_schema",
@@ -174,6 +178,9 @@ call_openai <- function(prompt, model, temperature = 0, timeout = 300, api_key =
       strict = TRUE,
       schema = build_gemini_json_schema(response_schema)
     ))
+  }
+  if (!is.null(reasoning_effort)) {
+    body$reasoning <- list(effort = reasoning_effort)
   }
 
   req <- httr2::request("https://api.openai.com/v1/responses") |>
@@ -254,7 +261,8 @@ call_claude <- function(prompt, model, temperature = 0, timeout = 300,
 #' @param prompt Prompt text to send.
 #' @param provider `"gemini"`, `"openai"`, `"chatgpt"`, `"claude"`, or `"anthropic"`.
 #' @param model Model id.
-#' @param temperature Sampling temperature.
+#' @param temperature Sampling temperature. For GPT-5.6 models it is sent only
+#'   when `reasoning_effort = "none"`.
 #' @param top_p Gemini nucleus-sampling value; ignored by OpenAI and Claude.
 #' @param timeout Maximum duration in seconds for each individual API attempt.
 #' @param max_retries Maximum retries for transient failures.
@@ -264,12 +272,16 @@ call_claude <- function(prompt, model, temperature = 0, timeout = 300,
 #' @param api_key Optional in-memory API key.
 #' @param project_id Optional OpenAI project id.
 #' @param response_schema Optional registered response schema.
+#' @param reasoning_effort Optional Responses API reasoning effort, for example
+#'   `"none"`, `"low"`, or `"medium"`. GPT-5.6 models require
+#'   `"none"` when `temperature` is used; otherwise temperature is omitted.
 #' @export
 run_llm <- function(prompt, provider = "gemini", model = "gemini-3.6-flash",
                     temperature = 0, top_p = 0.1, timeout = 300,
                     api_key = NULL, project_id = NULL, max_retries = 3,
                     retry_wait_seconds = 1, retry_backoff = 2,
-                    rate_limit_seconds = 0, response_schema = NULL) {
+                    rate_limit_seconds = 0, response_schema = NULL,
+                    reasoning_effort = NULL) {
   provider <- provider_alias(provider)
 
   if (provider == "gemini") {
@@ -278,7 +290,10 @@ run_llm <- function(prompt, provider = "gemini", model = "gemini-3.6-flash",
   }
 
   if (provider == "openai") {
-    return(with_retries(function() call_openai(prompt, model, temperature, timeout, api_key, project_id, response_schema),
+    if (is.null(reasoning_effort) && grepl("^gpt-5\\.6", tolower(model))) {
+      reasoning_effort <- "none"
+    }
+    return(with_retries(function() call_openai(prompt, model, temperature, timeout, api_key, project_id, response_schema, reasoning_effort),
       provider, model, max_retries, retry_wait_seconds, retry_backoff, rate_limit_seconds))
   }
 

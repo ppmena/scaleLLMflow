@@ -12,6 +12,13 @@ run_article(
   registry_dir = NULL,
   filetype = "auto",
   strip_references = TRUE,
+  tables_advanced = TRUE,
+  cache_markdown = TRUE,
+  conversion = "basic",
+  conversion_provider = "openai",
+  conversion_model = "gpt-5.6-luna",
+  conversion_prompt = NULL,
+  max_chars = 50000,
   items = NULL,
   output_dir = NULL,
   temperature = 0,
@@ -20,6 +27,7 @@ run_article(
   api_key = NULL,
   project_id = NULL,
   pdf_path = NULL,
+  reasoning_effort = NULL,
   max_retries = 3,
   retry_wait_seconds = 1,
   retry_backoff = 2,
@@ -43,6 +51,21 @@ run_article(
 \item{filetype}{One of \code{"auto"}, \code{"pdf"}, \code{"txt"}, or \code{"md"}.}
 
 \item{strip_references}{Whether to remove references before the LLM call.}
+
+\item{tables_advanced}{Whether to structure extracted headings, lists, and
+table-like blocks as Markdown before the LLM call.}
+
+\item{cache_markdown}{Whether PDF extraction writes a same-name \code{.md} cache
+beside the source PDF for reuse by \code{filetype = "auto"}.}
+
+\item{conversion}{PDF conversion mode: \code{"basic"} or \code{"llm"}. LLM conversion
+generally gives better results for multi-column articles and complex layouts.}
+
+\item{conversion_provider, conversion_model, conversion_prompt}{Settings for the
+LLM used only to convert PDF text into Markdown.}
+
+\item{max_chars}{Maximum text size per LLM PDF-conversion call; larger PDFs
+are split and reassembled automatically.}
 
 \item{items}{Item ids to parse. Defaults to 1:10.}
 

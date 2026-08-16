@@ -4,7 +4,20 @@
 \alias{extract_article_text}
 \title{Extract text from a supported article file.}
 \usage{
-extract_article_text(file_path, filetype = "auto", strip_references = TRUE)
+extract_article_text(
+  file_path,
+  filetype = "auto",
+  strip_references = TRUE,
+  tables_advanced = TRUE,
+  cache_markdown = TRUE,
+  conversion = "basic",
+  provider = "gemini",
+  model = "gemini-3.6-flash",
+  conversion_prompt = NULL,
+  temperature = 0,
+  max_chars = 50000,
+  ...
+)
 }
 \arguments{
 \item{file_path}{Path to a \code{.pdf}, \code{.txt}, or \code{.md} article file.}
@@ -12,6 +25,12 @@ extract_article_text(file_path, filetype = "auto", strip_references = TRUE)
 \item{filetype}{One of \code{"auto"}, \code{"pdf"}, \code{"txt"}, or \code{"md"}.}
 
 \item{strip_references}{Whether to remove the reference section before sending text to an LLM.}
+
+\item{conversion}{PDF conversion mode passed to \code{extract_pdf_text()}.}
+
+\item{provider, model, conversion_prompt, temperature}{LLM conversion settings.}
+
+\item{max_chars}{Maximum text size per LLM conversion call.}
 }
 \description{
 Extract text from a supported article file.

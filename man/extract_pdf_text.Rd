@@ -4,12 +4,36 @@
 \alias{extract_pdf_text}
 \title{Extract text from a PDF article.}
 \usage{
-extract_pdf_text(pdf_path, strip_references = TRUE)
+extract_pdf_text(
+  pdf_path,
+  strip_references = TRUE,
+  tables_advanced = TRUE,
+  cache_markdown = TRUE,
+  conversion = "basic",
+  provider = "openai",
+  model = "gpt-5.6-luna",
+  conversion_prompt = NULL,
+  temperature = 0,
+  max_chars = 50000,
+  ...
+)
 }
 \arguments{
 \item{pdf_path}{Path to a PDF article.}
 
 \item{strip_references}{Whether to remove the reference section before sending text to an LLM.}
+
+\item{tables_advanced}{Whether to apply local table heuristics.}
+
+\item{cache_markdown}{Whether to cache PDF conversion beside the source PDF.}
+
+\item{conversion}{PDF conversion mode: \code{"basic"} or \code{"llm"}. LLM conversion
+usually produces better reading order and Markdown structure for multi-column articles.}
+
+\item{provider, model, conversion_prompt, temperature}{LLM conversion settings.}
+
+\item{max_chars}{Maximum extracted-text size per LLM conversion call. Larger
+PDFs are split into line-safe chunks and reassembled into one Markdown file.}
 }
 \description{
 Extract text from a PDF article.

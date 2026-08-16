@@ -32,9 +32,11 @@ build_provenance <- function(article_path, article_text, prompt_text, full_promp
     prompt_sha256 = sha256_text(prompt_text),
     request_sha256 = sha256_text(full_prompt),
     requested_model = model,
+    selected_prompt = if (is.null(resolved$selected_prompt)) resolved$selected_model else resolved$selected_prompt,
     selected_prompt_model = resolved$selected_model,
     prompt_match_strategy = resolved$strategy,
     prompt_source = resolved$prompt_path,
+    prompt_version = if (!is.null(resolved$prompt_version)) resolved$prompt_version else if (is.null(resolved$metadata$prompt_version)) "unspecified" else as.character(resolved$metadata$prompt_version),
     provider = provider_alias(provider),
     temperature = temperature,
     top_p = top_p,
@@ -81,9 +83,12 @@ write_prompt_snapshot <- function(output_dir, prompt_text, resolved_prompt) {
   header <- paste(
     paste0("SCALE: ", resolved_prompt$scale),
     paste0("REQUESTED_MODEL: ", resolved_prompt$requested_model),
+    paste0("SELECTED_PROMPT: ", if (is.null(resolved_prompt$selected_prompt)) resolved_prompt$selected_model else resolved_prompt$selected_prompt),
     paste0("SELECTED_PROMPT_MODEL: ", resolved_prompt$selected_model),
     paste0("PROMPT_MATCH_STRATEGY: ", resolved_prompt$strategy),
     paste0("PROMPT_SOURCE: ", resolved_prompt$prompt_path),
+    paste0("PROMPT_VERSION: ", if (!is.null(resolved_prompt$prompt_version)) resolved_prompt$prompt_version else if (is.null(resolved_prompt$metadata$prompt_version)) "unspecified" else resolved_prompt$metadata$prompt_version),
+    paste0("PROMPT_SHA256: ", sha256_text(prompt_text)),
     "--- PROMPT TEXT ---",
     sep = "\n"
   )
@@ -135,6 +140,16 @@ build_audit_log <- function(clean_id, provider, model, strip_references, call_lo
 #' @param registry_dir Optional prompt registry root.
 #' @param filetype One of `"auto"`, `"pdf"`, `"txt"`, or `"md"`.
 #' @param strip_references Whether to remove references before the LLM call.
+#' @param tables_advanced Whether to structure extracted headings, lists, and
+#'   table-like blocks as Markdown before the LLM call.
+#' @param cache_markdown Whether PDF extraction writes a same-name `.md` cache
+#'   beside the source PDF for reuse by `filetype = "auto"`.
+#' @param conversion PDF conversion mode: `"basic"` or `"llm"`. LLM conversion
+#'   generally gives better results for multi-column articles and complex layouts.
+#' @param conversion_provider,conversion_model,conversion_prompt Settings for the
+#'   LLM used only to convert PDF text into Markdown.
+#' @param max_chars Maximum text size per LLM PDF-conversion call; larger PDFs
+#'   are split and reassembled automatically.
 #' @param items Item ids to parse. Defaults to 1:10.
 #' @param output_dir Optional output directory for an audit log.
 #' @param write_evidence Whether to write the per-article evidence CSV. Dataset
@@ -146,9 +161,13 @@ build_audit_log <- function(clean_id, provider, model, strip_references, call_lo
 #' @param validation_mode Either `"free"` or `"reference"`.
 #' @export
 run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini", model = "gemini-3.6-flash",
-                        registry_dir = NULL, filetype = "auto", strip_references = TRUE, items = NULL,
+                        registry_dir = NULL, filetype = "auto", strip_references = TRUE, tables_advanced = TRUE, cache_markdown = TRUE,
+                        conversion = "basic", conversion_provider = "openai", conversion_model = "gpt-5.6-luna", conversion_prompt = NULL,
+                        max_chars = 50000,
+                        items = NULL,
                         output_dir = NULL, temperature = 0, top_p = 0.1, timeout = 300,
                         api_key = NULL, project_id = NULL, pdf_path = NULL,
+                        reasoning_effort = NULL,
                         max_retries = 3, retry_wait_seconds = 1, retry_backoff = 2,
                         rate_limit_seconds = 0, reference_scores = NULL,
                         validation_mode = c("free", "reference"), write_evidence = TRUE) {
@@ -164,7 +183,11 @@ run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini",
 
   resolved <- resolve_prompt(scale, model, provider = provider, registry_dir = registry_dir)
   prompt_text <- paste(readLines(resolved$prompt_path, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
-  article_text <- extract_article_text(article_path, filetype = filetype, strip_references = strip_references)
+  article_text <- extract_article_text(article_path, filetype = filetype,
+    strip_references = strip_references, tables_advanced = tables_advanced,
+    cache_markdown = cache_markdown, conversion = conversion,
+    provider = conversion_provider, model = conversion_model,
+    conversion_prompt = conversion_prompt, max_chars = max_chars)
 
   if (nchar(trimws(article_text)) < 100) {
     stop("Article without sufficient extractable text: ", article_path, call. = FALSE)
@@ -178,6 +201,7 @@ run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini",
     temperature = temperature,
     top_p = top_p,
     timeout = timeout,
+    reasoning_effort = reasoning_effort,
     api_key = api_key,
     project_id = project_id,
     max_retries = max_retries,
@@ -278,6 +302,10 @@ run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini",
 #' @param model Requested model.
 #' @param registry_dir Optional prompt registry root.
 #' @param strip_references,items,temperature,top_p,timeout,api_key,project_id Provider and parsing settings.
+#' @param conversion,conversion_provider,conversion_model,conversion_prompt PDF
+#'   conversion settings. LLM conversion generally gives better results for
+#'   multi-column articles and complex layouts.
+#' @param max_chars Maximum text size per LLM PDF-conversion call.
 #' @param max_retries,retry_wait_seconds,retry_backoff,rate_limit_seconds Reliability settings.
 #' @param reference_csv Optional reviewed-score CSV.
 #' @param validation_mode Either `"free"` or `"reference"`.
@@ -286,11 +314,14 @@ run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini",
 #' consolidated evidence report, and errors when any occurred.
 #' @export
 run_dataset <- function(articles_dir, scale = "mqs", provider = "gemini", model = "gemini-3.6-flash",
-                        output_dir, registry_dir = NULL, filetype = "auto", strip_references = TRUE, max_articles = 0,
+                        output_dir, registry_dir = NULL, filetype = "auto", strip_references = TRUE, tables_advanced = TRUE, cache_markdown = TRUE,
+                        conversion = "basic", conversion_provider = "openai", conversion_model = "gpt-5.6-luna", conversion_prompt = NULL, max_articles = 0,
+                        max_chars = 50000,
                         items = NULL, temperature = 0, top_p = 0.1, timeout = 300,
                         api_key = NULL, project_id = NULL, max_retries = 3,
                         retry_wait_seconds = 1, retry_backoff = 2,
                         rate_limit_seconds = 0, reference_csv = NULL,
+                        reasoning_effort = NULL,
                         validation_mode = c("free", "reference")) {
   if (!dir.exists(articles_dir)) {
     stop("Articles directory not found: ", articles_dir, call. = FALSE)
@@ -367,11 +398,19 @@ run_dataset <- function(articles_dir, scale = "mqs", provider = "gemini", model 
         registry_dir = registry_dir,
         filetype = filetype,
         strip_references = strip_references,
+        tables_advanced = tables_advanced,
+        cache_markdown = cache_markdown,
+        conversion = conversion,
+        conversion_provider = conversion_provider,
+        conversion_model = conversion_model,
+        conversion_prompt = conversion_prompt,
+        max_chars = max_chars,
         items = items,
         output_dir = output_dir,
         temperature = temperature,
         top_p = top_p,
         timeout = timeout,
+        reasoning_effort = reasoning_effort,
         api_key = api_key,
         project_id = project_id,
         max_retries = max_retries,

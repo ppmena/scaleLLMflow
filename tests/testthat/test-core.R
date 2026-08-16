@@ -23,6 +23,19 @@ test_that("provenance contains stable hashes and execution metadata", {
   expect_true(grepl("^[0-9a-f]{64}$", provenance$article_text_sha256))
   expect_equal(provenance$request_characters, nchar("prompt article"))
   expect_true(!is.null(provenance$r_version))
+  expect_equal(metadata$selected_prompt, "scale")
+  expect_equal(metadata$prompt_version, "v040")
+  expect_equal(provenance$selected_prompt, "scale")
+  expect_equal(provenance$prompt_version, "v040")
+})
+
+test_that("prompt snapshots record prompt version and hash", {
+  resolved <- scaleLLMflow:::resolve_prompt("mqs", "gemini-3.6-flash")
+  out <- tempfile(); dir.create(out)
+  scaleLLMflow:::write_prompt_snapshot(out, "prompt text", resolved)
+  snapshot <- paste(readLines(file.path(out, "prompt_used.md")), collapse = "\n")
+  expect_match(snapshot, "PROMPT_VERSION:")
+  expect_match(snapshot, paste0("PROMPT_SHA256: ", scaleLLMflow:::sha256_text("prompt text")))
 })
 
 test_that("Gemini structured output schema is generated from scale metadata", {
@@ -61,11 +74,11 @@ test_that("registry audit validates definitions and proposes duplicate unificati
   }
 })
 
-testthat::test_that("prompt registry resolves scales and model fallbacks", {
+testthat::test_that("prompt registry resolves scale-level prompts", {
   testthat::expect_true("mqs" %in% available_scales())
   testthat::expect_true("pedro" %in% available_scales())
   exact <- resolve_prompt("pedro", "gemini-2.5-flash")
-  testthat::expect_equal(exact$selected_model, "gemini-2.5-flash")
+  testthat::expect_equal(exact$selected_prompt, "scale")
   testthat::expect_true(file.exists(exact$prompt_path))
 })
 
@@ -77,6 +90,14 @@ testthat::test_that("line-oriented scores and multiline items are parsed", {
     sep = "\n"
   )
   testthat::expect_equal(parse_scale_scores(response, 1:2), c(Item_1 = 1, Item_2 = 0.5))
+})
+
+test_that("auto file listing prefers a same-name Markdown cache", {
+  dir <- tempfile(); dir.create(dir)
+  file.create(file.path(dir, "study.pdf")); file.create(file.path(dir, "study.md"))
+  file.create(file.path(dir, "other.pdf"))
+  files <- scaleLLMflow:::list_article_files(dir, "auto")
+  expect_equal(basename(files), c("other.pdf", "study.md"))
 })
 
 testthat::test_that("PEDro JSON decisions are parsed into numeric scores", {

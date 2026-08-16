@@ -43,21 +43,21 @@ test_that("strip_references_section handles safe stripping", {
   expect_true(grepl("This is the end", not_stripped))
 })
 
-test_that("resolve_prompt resolves exact and family fallbacks", {
+test_that("resolve_prompt resolves the accepted scale prompt", {
   # Since registry_dir can be supplied, we can test with the package's built-in scales
   resolved <- scaleLLMflow::resolve_prompt("mqs", "gemini-2.5-flash")
   expect_equal(resolved$scale, "mqs")
-  expect_equal(resolved$selected_model, "generic")
-  expect_equal(resolved$strategy, "generic")
+  expect_equal(resolved$selected_prompt, "scale")
+  expect_equal(resolved$strategy, "scale")
 
-  resolved_fallback <- scaleLLMflow::resolve_prompt("mqs", "gemini-1.5-flash")
-  expect_equal(resolved_fallback$scale, "mqs")
-  expect_equal(resolved_fallback$strategy, "generic")
+  resolved_other_model <- scaleLLMflow::resolve_prompt("mqs", "gemini-1.5-flash")
+  expect_equal(resolved_other_model$scale, "mqs")
+  expect_equal(resolved_other_model$strategy, "scale")
 })
 
 test_that("registered JSON responses are validated and converted", {
   metadata <- scaleLLMflow:::read_prompt_metadata(
-    system.file("scales/pedro/gemini-2.5-flash", package = "scaleLLMflow")
+    system.file("scales/pedro", package = "scaleLLMflow")
   )
   item <- function(decision) list(decision = decision, evidence = "reported", reason = "criterion")
   response <- list(items = setNames(lapply(c("No", rep("Yes", 10)), item),
@@ -71,7 +71,7 @@ test_that("registered JSON responses are validated and converted", {
 
 test_that("JSON with a terminal closing fence is normalized safely", {
   metadata <- scaleLLMflow:::read_prompt_metadata(
-    system.file("scales/mqs/generic", package = "scaleLLMflow")
+    system.file("scales/mqs", package = "scaleLLMflow")
   )
   response <- list(items = setNames(lapply(seq_len(10), function(i) {
     list(decision = "1.0", evidence = "evidence", reason = "reason")

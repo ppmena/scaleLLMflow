@@ -17,7 +17,8 @@ run_llm(
   retry_wait_seconds = 1,
   retry_backoff = 2,
   rate_limit_seconds = 0,
-  response_schema = NULL
+  response_schema = NULL,
+  reasoning_effort = NULL
 )
 }
 \arguments{
@@ -27,7 +28,8 @@ run_llm(
 
 \item{model}{Model id.}
 
-\item{temperature}{Sampling temperature.}
+\item{temperature}{Sampling temperature. For GPT-5.6 models it is sent only
+when \code{reasoning_effort = "none"}.}
 
 \item{top_p}{Gemini nucleus-sampling value; ignored by OpenAI and Claude.}
 
@@ -46,6 +48,10 @@ run_llm(
 \item{rate_limit_seconds}{Minimum delay between requests in this R process.}
 
 \item{response_schema}{Optional registered response schema.}
+
+\item{reasoning_effort}{Optional Responses API reasoning effort, for example
+\code{"none"}, \code{"low"}, or \code{"medium"}. GPT-5.6 models require
+\code{"none"} when \code{temperature} is used; otherwise temperature is omitted.}
 }
 \description{
 Call a supported LLM provider with user-owned API credentials.
