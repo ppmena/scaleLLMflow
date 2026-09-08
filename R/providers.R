@@ -19,6 +19,13 @@ get_required_env <- function(names) {
   hit[[1]]
 }
 
+resolve_gemini_project <- function(project_id = NULL) {
+  if (is.null(project_id) || !nzchar(project_id)) {
+    project_id <- Sys.getenv("GOOGLE_CLOUD_PROJECT", unset = "")
+  }
+  project_id
+}
+
 # Keep a process-local timestamp so sequential dataset runs do not burst the
 # provider API. A value of zero disables the delay.
 enforce_rate_limit <- function(rate_limit_seconds) {
@@ -137,10 +144,11 @@ with_retries <- function(operation, provider, model, max_retries = 3,
 }
 
 call_gemini <- function(prompt, model, temperature = 0, top_p = 0.1, timeout = 300,
-                        api_key = NULL, response_schema = NULL) {
+                        api_key = NULL, project_id = NULL, response_schema = NULL) {
   if (is.null(api_key) || !nzchar(api_key)) {
     api_key <- get_required_env(c("GEMINI_API_KEY", "GOOGLE_GEMINI_KEY"))
   }
+  project_id <- resolve_gemini_project(project_id)
 
   # Gemini Interactions is the current unified REST endpoint. The API key is
   # sent in a header, avoiding credentials in URLs and request logs.
@@ -158,8 +166,12 @@ call_gemini <- function(prompt, model, temperature = 0, top_p = 0.1, timeout = 3
     generation_config = list(temperature = temperature, top_p = top_p)
   )
 
-  resp <- httr2::request(endpoint) |>
-    httr2::req_headers(`x-goog-api-key` = api_key) |>
+  req <- httr2::request(endpoint) |>
+    httr2::req_headers(`x-goog-api-key` = api_key)
+  if (nzchar(project_id)) {
+    req <- httr2::req_headers(req, `x-goog-user-project` = project_id)
+  }
+  resp <- req |>
     httr2::req_body_json(body, auto_unbox = TRUE) |>
     httr2::req_options(timeout = timeout) |>
     httr2::req_perform()
@@ -293,7 +305,8 @@ call_claude <- function(prompt, model, temperature = 0, timeout = 300,
 #' @param retry_backoff Multiplicative exponential-backoff factor.
 #' @param rate_limit_seconds Minimum delay between requests in this R process.
 #' @param api_key Optional in-memory API key.
-#' @param project_id Optional OpenAI project id.
+#' @param project_id Optional provider project id. For Gemini, this is sent as
+#'   the Google quota/billing project; for OpenAI it is sent as the project header.
 #' @param response_schema Optional registered response schema.
 #' @param reasoning_effort Optional Responses API reasoning effort, for example
 #'   `"none"`, `"low"`, or `"medium"`. GPT-5.6 models require
@@ -313,7 +326,7 @@ run_llm <- function(prompt, provider = "gemini", model = "gemini-3.6-flash",
   provider <- provider_alias(provider)
 
   if (provider == "gemini") {
-    return(with_retries(function() call_gemini(prompt, model, temperature, top_p, timeout, api_key, response_schema),
+    return(with_retries(function() call_gemini(prompt, model, temperature, top_p, timeout, api_key, project_id, response_schema),
       provider, model, max_retries, retry_wait_seconds, retry_backoff, rate_limit_seconds))
   }
 

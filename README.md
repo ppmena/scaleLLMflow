@@ -29,6 +29,7 @@ Configure them in `.Renviron`, the system environment, RStudio, or pass an
 API key in memory for a single call:
 
 - Gemini: `GEMINI_API_KEY` or `GOOGLE_GEMINI_KEY`
+- Gemini billing/quota project: `GOOGLE_CLOUD_PROJECT` (for example, `gen-lang-client-0051865910`)
 - OpenAI: `OPENAI_API_KEY`
 - Optional OpenAI project: `OPENAI_PROJECT_ID`
 - Claude/Anthropic: `ANTHROPIC_API_KEY` or `CLAUDE_API_KEY`

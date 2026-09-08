@@ -30,6 +30,23 @@ Before editing files, identify:
 Do not infer scoring rules from a single article. Preserve the source scale's
 meaning, item order, and response encoding.
 
+## Gemini billing and quota configuration
+
+For Gemini runs, configure both the API key and the Google Cloud project that
+owns the paid billing/quota. Use the project **ID**, not only its display name:
+
+```text
+GEMINI_API_KEY=your-key
+GOOGLE_CLOUD_PROJECT=your-google-cloud-project-id
+```
+
+Every standard Gemini API key is associated with one Google Cloud project. A
+`project_id` argument passed to `run_article()`, `run_dataset()`, or `run_llm()`
+overrides `GOOGLE_CLOUD_PROJECT` for that call and is forwarded as the Google
+quota/billing project. This does not change the project associated with the
+API key, so the key must be created in or linked to the paid project. After
+changing `.Renviron`, restart R/RStudio.
+
 ## Required implementation
 
 Create one scale-level directory for every scale. Prompts are independent of
