@@ -58,9 +58,25 @@ format_provider_error <- function(error, provider, model, attempt) {
 
 is_retryable_error <- function(error) {
   response <- error$resp %||% error$response
-  status <- if (is.null(response)) NA_integer_ else
+  status <- if (!is.null(error$status)) error$status else if (is.null(response)) NA_integer_ else
     tryCatch(httr2::resp_status(response), error = function(e) NA_integer_)
   is.na(status) || status %in% c(408, 409, 425, 429) || status >= 500
+}
+
+retry_after_seconds <- function(error) {
+  response <- error$resp %||% error$response
+  header <- if (!is.null(response)) {
+    headers <- tryCatch(httr2::resp_headers(response), error = function(e) list())
+    as.character(headers[["retry-after"]] %||% headers[["Retry-After"]] %||% "")
+  } else ""
+  body <- if (!is.null(error$response_body)) as.character(error$response_body) else
+    if (!is.null(response)) tryCatch(httr2::resp_body_string(response), error = function(e) "") else ""
+  candidate <- suppressWarnings(as.numeric(trimws(header)))
+  if (is.na(candidate)) {
+    match <- stringr::str_match(body, "(?i)retry(?:-after| in)[^0-9]*([0-9]+(?:\\.[0-9]+)?)\\s*(?:s|sec|seconds)?")
+    candidate <- suppressWarnings(as.numeric(match[1, 2]))
+  }
+  if (is.na(candidate) || candidate < 0) NA_real_ else candidate
 }
 
 # Translate the compact registry contract into the JSON Schema expected by
@@ -109,7 +125,14 @@ with_retries <- function(operation, provider, model, max_retries = 3,
     if (!inherits(result, "condition")) return(result)
     detailed <- format_provider_error(result, provider, model, attempt)
     if (attempt == total_attempts || !is_retryable_error(result)) stop(detailed)
-    Sys.sleep(min(60, retry_wait_seconds * retry_backoff^(attempt - 1)))
+    base_wait <- retry_wait_seconds * retry_backoff^(attempt - 1)
+    server_wait <- retry_after_seconds(detailed)
+    wait <- max(base_wait, ifelse(is.na(server_wait), 0, server_wait))
+    wait <- min(900, wait)
+    if (wait > 0) {
+      message("Retrying ", provider, "/", model, " after ", format(round(wait, 1), nsmall = 1), " seconds.")
+      Sys.sleep(wait)
+    }
   }
 }
 
