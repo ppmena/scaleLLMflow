@@ -38,13 +38,18 @@ test_that("Gemini Lite is the default model across workflows", {
   expect_identical(formals(scaleLLMflow::run_dataset)$model, "gemini-3.5-flash-lite")
 })
 
-test_that("RoB 2 v002 distinguishes trial context from ordinary non-adherence", {
+test_that("RoB 2 v003 applies the meta-prompt safeguards", {
   resolved <- scaleLLMflow:::resolve_prompt("rob2", "gpt-5.6-luna", provider = "openai")
   prompt <- paste(readLines(resolved$prompt_path, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
-  expect_equal(resolved$metadata$prompt_version, "v002")
+  expect_equal(resolved$metadata$prompt_version, "v003")
   expect_match(prompt, "ordinary non-adherence or non-compliance")
   expect_match(prompt, "resentful demoralization")
   expect_match(prompt, "Answer `NA` if 2.1 and 2.2 are `N`/`PN`")
+  expect_match(prompt, "Treat values produced by LOCF")
+  expect_match(prompt, "Complete-case/list-wise deletion analysis")
+  expect_match(prompt, "the participant is the outcome assessor")
+  expect_match(prompt, "global selective non-reporting")
+  expect_match(prompt, "three or more domains")
 })
 
 test_that("provenance contains stable hashes and execution metadata", {
