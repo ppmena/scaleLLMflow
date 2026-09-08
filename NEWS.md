@@ -1,3 +1,10 @@
+# scaleLLMflow 0.4.2
+
+## Provider rate-limit handling
+
+HTTP 429 retries now honor provider `Retry-After` headers and retry hints in
+response bodies, with capped exponential backoff up to 15 minutes.
+
 # scaleLLMflow 0.4.1
 
 ## RoB 2 scale registry

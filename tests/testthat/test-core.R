@@ -13,6 +13,15 @@ test_that("transient failures are retried and errors include context", {
     "openai", "test-model", max_retries = 0), "provider=openai")
 })
 
+test_that("429 retry hints are parsed and honored", {
+  error <- structure(list(status = 429, response_body = "Please retry in 52.58s."),
+    class = c("scaleLLMflow_provider_error", "error", "condition"))
+  expect_equal(scaleLLMflow:::retry_after_seconds(error), 52.58)
+  header_error <- structure(list(status = 429, response_body = "retry-after: 7"),
+    class = c("scaleLLMflow_provider_error", "error", "condition"))
+  expect_equal(scaleLLMflow:::retry_after_seconds(header_error), 7)
+})
+
 test_that("provenance contains stable hashes and execution metadata", {
   expect_equal(nchar(scaleLLMflow:::sha256_text("hello")), 64)
   metadata <- scaleLLMflow:::resolve_prompt("mqs", "gemini-2.5-flash")
