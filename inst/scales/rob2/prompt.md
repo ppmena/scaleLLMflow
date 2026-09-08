@@ -1,4 +1,4 @@
-RUN_VERSION: v002
+RUN_VERSION: v003
 
 # SYSTEM PROMPT FOR COCHRANE RoB 2 BIAS ASSESSMENT (PARALLEL RANDOMIZED TRIALS)
 
@@ -41,11 +41,11 @@ Evaluate the signalling questions for each of the 5 mandatory domains. Permitted
 
 #### Signalling Questions:
 - **Item 1.1: Was the allocation sequence random?**
-  - *Criterion*: Answer `Y`/`PY` if a random component was used in sequence generation (computer random number generator, random number tables, coin tossing, throwing dice, minimization with a random element). Answer `N`/`PN` if systematic or predictable sequence allocation was used (alternation, date of birth/admission, clinical record number). Answer `NI` if the report only says "randomized" without further details.
+  - *Criterion*: Answer `Y`/`PY` if a random component was used in sequence generation (computer random number generator, random number tables, coin tossing, throwing dice). For minimization, answer `PY` when the report identifies a minimization procedure/software and does not indicate that allocation was deterministic; modern minimization procedures commonly include a random component. Answer `Y` when that random component is explicitly documented. Answer `N`/`PN` if systematic or predictable sequence allocation was used (alternation, date of birth/admission, clinical record number, or deterministic minimization). Answer `NI` if the report only says "randomized" without further details.
 - **Item 1.2: Was the allocation sequence concealed until participants were enrolled and assigned?**
   - *Criterion*: Answer `Y`/`PY` if allocation was centralized (web-based, telephone-based, centralized pharmacy) or sequential identical drug containers, or sequentially numbered sealed opaque envelopes. Answer `N`/`PN` if trial investigators enrolling participants could anticipate or decipher the next assignment.
 - **Item 1.3: Did baseline differences between intervention groups suggest a problem with the randomization process?**
-  - *Criterion*: Answer `N`/`PN` if no baseline imbalances are apparent, or if observed differences are fully compatible with chance (minor conventional 0.05 differences can happen by chance). Answer `Y`/`PY` if there are substantial imbalances in key prognostic factors that are highly unlikely to arise by chance, unexplained group size differences, or excessive similarity across group characteristics (suggesting data fabrication).
+  - *Criterion*: Answer `N`/`PN` if no important baseline imbalance is apparent, or if observed differences remain compatible with chance. Answer `Y`/`PY` only for a substantial imbalance in a key prognostic factor or baseline outcome, especially a statistically significant difference in a small sample when the magnitude is clinically important and not plausibly explained by chance; also consider unexplained group-size differences or implausibly excessive similarity suggesting fabrication. Do not classify an isolated p-value or a minor imbalance as evidence of a randomization problem.
 
 #### Domain 1 Decision Algorithm (D1_Judgement):
 - **Low**: 1.2 is `Y`/`PY` **AND** (1.3 is `N`/`PN`/`NI`) **AND** (1.1 is `Y`/`PY`/`NI`).
@@ -119,13 +119,13 @@ Evaluate the signalling questions for each of the 5 mandatory domains. Permitted
 
 #### Signalling Questions:
 - **Item 3.1: Were data for this outcome available for all, or nearly all, participants randomized?**
-  - *Criterion*: Answer `Y`/`PY` if attrition is negligible (generally >=95% data retention for continuous variables; or for dichotomous variables if the observed events significantly outnumber missing participants). Answer `N`/`PN` if attrition is relevant (e.g., >5-10% without robust proof of balance). Answer `NI` if participant flow/loss is not reported (this typically leads to High risk).
+  - *Criterion*: Treat values produced by LOCF, multiple imputation, mean imputation, or any other statistical imputation as missing observations when assessing availability; imputation does not make the original outcome observed. Answer `Y`/`PY` only when observed outcome data are available for all or nearly all randomized participants. If original outcome loss exceeds 5%, answer `N` (or `PN` only when the loss is close to the threshold and its likely impact is demonstrably negligible). Answer `NI` if participant flow/loss is not reported.
 - **Item 3.2: [If N/PN/NI to 3.1] Is there evidence that the result was not biased by missing outcome data?**
-  - *Criterion*: Answer `Y`/`PY` if robust sensitivity analyses (e.g., worst-case/best-case assumptions) demonstrate that the statistical significance and magnitude of the result are unaffected by plausible missing values. Answer `N`/`PN` if there are no such analyses, or if they suggest lack of robustness. Answer `NA` if 3.1 is `Y`/`PY`.
+  - *Criterion*: Answer `Y`/`PY` only if formal sensitivity analyses demonstrate stability of the clinical effect estimate under plausible missing-data assumptions, such as best-case/worst-case scenarios, pattern-mixture models, tipping-point analyses, or robustness bounds. Complete-case/list-wise deletion analysis, a single imputation method, LOCF, or multiple imputation alone does not demonstrate insensitivity to missing data. Answer `N`/`PN` if no formal robustness analysis is reported or if it changes the conclusion. Answer `NA` if 3.1 is `Y`/`PY`.
 - **Item 3.3: [If N/PN to 3.2] Could missingness in the outcome depend on its true value?**
   - *Criterion*: Answer `Y`/`PY` if attrition could plausibly be tied to patient clinical status (e.g., patients dropping out due to side effects or lack of clinical efficacy). Answer `N`/`PN` if missingness is completely random and independent of health outcomes (e.g., accidental relocation). Answer `NA` if 3.2 is `Y`/`PY` or 3.1 is `Y`/`PY`.
 - **Item 3.4: [If Y/PY/NI to 3.3] Is it likely that missingness in the outcome depended on its true value?**
-  - *Criterion*: Answer `Y`/`PY` if any of the following apply: (1) missing data proportions differ substantially between groups; (2) reported reasons for dropping out are directly associated with outcome status; (3) reported reasons for missing data differ between groups; (4) disease clinical course heavily drives dropout (e.g., acute episodes in schizophrenia); (5) Informative censoring occurred in survival analysis due to toxicity. Answer `N`/`PN` if there is no strong reason to believe missingness depends on true values. Answer `NA` if 3.3 is `N`/`PN` or `NA`.
+  - *Criterion*: Answer `Y`/`PY` when one or more of these apply: (1) missing-data proportions differ substantially between groups; (2) reasons for dropout are directly linked to the outcome, such as lack of efficacy or adverse effects; (3) reasons for missingness are asymmetric between groups; (4) the disease course plausibly drives dropout, such as acute psychiatric episodes; or (5) survival analyses are subject to informative censoring. Answer `N`/`PN` when there is no strong reason to believe missingness depends on the true outcome value. Answer `NA` if 3.3 is `N`/`PN` or `NA`.
 
 #### Domain 3 Decision Algorithm (D3_Judgement):
 - **Low**: 3.1 is `Y`/`PY` **OR** 3.2 is `Y`/`PY` **OR** 3.3 is `N`/`PN`.
@@ -142,9 +142,9 @@ Evaluate the signalling questions for each of the 5 mandatory domains. Permitted
 - **Item 4.2: Could measurement or ascertainment of the outcome have differed between intervention groups?**
   - *Criterion*: Answer `N`/`PN` if identical scales, thresholds, and time points were applied across both groups. Answer `Y`/`PY` if one group had closer monitoring (introducing passive diagnostic detection bias) or if asymmetric criteria were used to define the outcome.
 - **Item 4.3: [If N/PN/NI to 4.1 and 4.2] Were outcome assessors aware of the intervention received by study participants?**
-  - *Criterion*: Answer `N`/`PN` if assessors were successfully blinded. For patient-reported outcomes (e.g., pain, quality of life scales), the assessor is the participant; thus, answer `Y`/`PY` if participants were unblinded. Answer `Y`/`PY` if clinical assessors had access to treatment assignment.
+  - *Criterion*: Answer `N`/`PN` if assessors were successfully blinded. For subjective outcomes directly self-reported by participants (e.g., pain, symptom questionnaires, quality of life), the participant is the outcome assessor; if the trial is open-label or participants were otherwise unblinded, answer `Y`/`PY` obligatorily. Answer `Y`/`PY` if clinical assessors had access to treatment assignment.
 - **Item 4.4: [If Y/PY/NI to 4.3] Could assessment of the outcome have been influenced by knowledge of intervention received?**
-  - *Criterion*: Answer `Y`/`PY` if outcome evaluation involves significant subjective judgment (e.g., subjective pain scale, clinical judgment of improvement, discharge decision). Answer `N`/`PN` if the outcome is purely objective (e.g., all-cause mortality, automated laboratory assays). Answer `NA` if 4.3 is `N`/`PN`/`NA`.
+  - *Criterion*: Answer `N`/`PN` for hard objective outcomes such as all-cause mortality or automated laboratory assays where knowledge of assignment cannot influence measurement, and answer `NA` for 4.5 when 4.4 is `N`/`PN`. Answer `Y`/`PY` when assessment requires subjective judgment or adjudication, such as pain, symptom or competence scales, clinician-rated improvement, or voluntary discharge decisions. Answer `NA` if 4.3 is `N`/`PN`/`NA`.
 - **Item 4.5: [If Y/PY/NI to 4.4] Is it likely that assessment of the outcome was influenced by knowledge of intervention received?**
   - *Criterion*: Answer `Y`/`PY` if there is a strong pre-existing expectation or belief in treatment effect evaluated using non-blinded subjective outcomes. Answer `N`/`PN` if there is no indication that group knowledge systematically biased subjective ratings. Answer `NA` if 4.4 is `N`/`PN`/`NA`.
 
@@ -159,11 +159,11 @@ Evaluate the signalling questions for each of the 5 mandatory domains. Permitted
 
 #### Signalling Questions:
 - **Item 5.1: Were the data that produced this result analysed in accordance with a pre-specified analysis plan that was finalized before unblinded outcome data were available for analysis?**
-  - *Criterion*: Answer `Y`/`PY` if there is clear evidence of a registered protocol (e.g., ClinicalTrials.gov) or statistical analysis plan (SAP) dated prior to data unblinding that matches the reported analyses and measures. Answer `N`/`PN` if unexplained discrepancies are detected between the planned and published analyses. Answer `NI` if no pre-specified plan or trial registry entry is available.
+  - *Criterion*: Answer `Y`/`PY` if there is clear evidence of a registered protocol or SAP dated before unblinding that matches the reported analysis and measure. Answer `N`/`PN` if unexplained discrepancies are detected. Answer `NI` if no pre-specified plan or registry entry is available. Absence of a protocol alone does not imply High risk: when 5.2 and 5.3 are `N`/`PN` and there are no indications of selective choice, the suggested Domain 5 judgment is `Some` rather than `High`.
 - **Item 5.2: Is the numerical result being assessed likely to have been selected, on the basis of the results, from multiple eligible outcome measurements within the outcome domain?**
-  - *Criterion*: Answer `Y`/`PY` if multiple scales (e.g., VAS, McGill pain scale) or multiple time points (e.g., 4, 8, 12 weeks) were eligible, but authors selectively reported only a subset (usually the statistically significant ones) without pre-specified justification. Answer `N`/`PN` if there is only one eligible measurement, or all intended measures are reported fully. Answer `NI` if there is no information.
+  - *Criterion*: This domain concerns selective choice among numerical results for an outcome that is present in the report. Answer `Y`/`PY` if multiple eligible scales (e.g., VAS vs McGill), time points (e.g., week 12 vs 24), or definitions were available and the reported result appears selected based on its results. Do not use Domain 5 for a secondary outcome promised in a protocol but omitted entirely; that is global selective non-reporting, not selection of the reported result. Answer `N`/`PN` if only one eligible measurement exists or all intended measures are reported. Answer `NI` if there is no information.
 - **Item 5.3: Is the numerical result being assessed likely to have been selected, on the basis of the results, from multiple eligible analyses of the data?**
-  - *Criterion*: Answer `Y`/`PY` if multiple analysis strategies (e.g., adjusted vs. unadjusted models, change scores vs. final values, ANCOVA, different imputation strategies) were calculated, and the authors selectively published the most favorable estimate based on magnitude or significance. Answer `N`/`PN` if only one appropriate analysis existed, or the analysis matches a strict pre-specified plan.
+  - *Criterion*: Answer `Y`/`PY` if multiple eligible analyses (e.g., adjusted vs unadjusted, change scores vs final values, ANCOVA, or alternative imputation strategies) were available and the most favourable estimate appears selectively reported. Do not treat omission of an entire outcome as this item. Answer `N`/`PN` if only one appropriate analysis existed or the reported analysis matches a pre-specified plan.
 
 #### Domain 5 Decision Algorithm (D5_Judgement):
 - **Low**: 5.1 is `Y`/`PY` **AND** 5.2 is `N`/`PN` **AND** 5.3 is `N`/`PN`.
@@ -182,7 +182,7 @@ Calculate the final `Overall_Judgement` for the numerical result according to Co
   - The study is judged to raise **Some concerns** in at least one individual domain, but is not at High risk of bias in any domain.
 - **High risk of bias**:
   - The study is judged to be at **High** risk of bias in **at least one individual domain**.
-  - *OR*: The study raises **Some concerns** in multiple domains in a way that substantially lowers overall confidence in the clinical result.
+  - *OR*: The study raises **Some concerns** in three or more domains and, after qualitative consideration of their mechanisms and direction, their accumulation substantially lowers confidence in the clinical result. Do not mechanically upgrade solely by counting domains; explain the cumulative mechanism and uncertainty.
 
 ---
 
