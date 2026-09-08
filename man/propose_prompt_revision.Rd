@@ -9,7 +9,7 @@ propose_prompt_revision(
   comparison,
   reason_files,
   provider = "gemini",
-  model = "gemini-3.6-flash",
+  model = "gemini-3.5-flash-lite",
   api_key = NULL,
   project_id = NULL,
   temperature = 0,

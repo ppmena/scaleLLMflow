@@ -8,7 +8,7 @@ run_dataset(
   articles_dir,
   scale = "mqs",
   provider = "gemini",
-  model = "gemini-3.6-flash",
+  model = "gemini-3.5-flash-lite",
   output_dir,
   registry_dir = NULL,
   filetype = "auto",

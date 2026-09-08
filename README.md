@@ -29,6 +29,7 @@ Configure them in `.Renviron`, the system environment, RStudio, or pass an
 API key in memory for a single call:
 
 - Gemini: `GEMINI_API_KEY` or `GOOGLE_GEMINI_KEY`
+- Gemini billing/quota project: `GOOGLE_CLOUD_PROJECT` (for example, `gen-lang-client-0051865910`)
 - OpenAI: `OPENAI_API_KEY`
 - Optional OpenAI project: `OPENAI_PROJECT_ID`
 - Claude/Anthropic: `ANTHROPIC_API_KEY` or `CLAUDE_API_KEY`
@@ -44,7 +45,7 @@ result <- run_article(
   article_path = "path/to/article.pdf",
   scale = "mqs",
   provider = "gemini",
-  model = "gemini-3.6-flash",
+  model = "gemini-3.5-flash-lite",
   filetype = "pdf"
 )
 
@@ -59,7 +60,7 @@ results <- run_dataset(
   articles_dir = "path/to/articles",
   scale = "mqs",
   provider = "gemini",
-  model = "gemini-3.6-flash",
+  model = "gemini-3.5-flash-lite",
   output_dir = "results",
   filetype = "auto"
 )
@@ -149,7 +150,7 @@ To inspect the registry:
 
 ```r
 available_scales()
-resolved <- resolve_prompt("mqs", "gemini-3.6-flash")
+resolved <- resolve_prompt("mqs", "gemini-3.5-flash-lite")
 resolved$prompt_path
 resolved$prompt_version
 
@@ -176,7 +177,7 @@ package registry. Copy a scale prompt and its `metadata.json` to a local
 ```r
 run <- run_dataset(
   "training/my_mqs/articles", scale = "mqs", provider = "gemini",
-  model = "gemini-3.6-flash", registry_dir = "training/my_mqs/scales",
+  model = "gemini-3.5-flash-lite", registry_dir = "training/my_mqs/scales",
   output_dir = "training/my_mqs/iterations/iteration_1",
   temperature = 0, tables_advanced = TRUE
 )
@@ -201,7 +202,7 @@ proposal <- propose_prompt_revision(
     pattern = "_AuditLog\\.txt$", full.names = TRUE, recursive = TRUE
   ),
   provider = "gemini",
-  model = "gemini-3.6-flash",
+  model = "gemini-3.5-flash-lite",
   output_path = "training/my_mqs/scales/mqs/prompt_proposal.md"
 )
 cat(proposal$prompt)
@@ -243,7 +244,7 @@ my_registry <- "my-study/scales"
 available_scales(my_registry)
 resolve_prompt(
   scale = "my_scale",
-  model = "gemini-3.6-flash",
+  model = "gemini-3.5-flash-lite",
   provider = "gemini",
   registry_dir = my_registry
 )
@@ -252,7 +253,7 @@ result <- run_article(
   article_path = "my-study/articles/article.pdf",
   scale = "my_scale",
   provider = "gemini",
-  model = "gemini-3.6-flash",
+  model = "gemini-3.5-flash-lite",
   registry_dir = my_registry
 )
 ```

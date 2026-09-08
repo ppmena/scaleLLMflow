@@ -10,7 +10,7 @@ eso no equivale a una garantía permanente de disponibilidad.
 
 | Proveedor | Modelo | Uso comprobado | Observaciones | Predeterminado en 0.3.7 |
 |---|---|---|---|---|
-| Gemini | `gemini-3.6-flash` | Evaluación de escalas MQS/PEDro y ejemplos generales | Modelo rápido; admite `temperature` y salida estructurada | **Sí, para evaluación general Gemini** |
+| Gemini | `gemini-3.5-flash-lite` | Evaluación de escalas MQS/PEDro y ejemplos generales | Modelo rápido; admite `temperature` y salida estructurada | **Sí, para evaluación general Gemini** |
 | Gemini | `gemini-3.5-flash-lite` | Comparación entre modelos | Variante ligera y económica; adecuada para pruebas rápidas | No |
 | OpenAI | `gpt-4.1-mini` | Entrenamiento local de prompts MQS y comparación de modelos | Buen equilibrio entre coste y calidad para entrenamiento | No |
 | OpenAI | `gpt-5.6-luna` | Conversión PDF → Markdown, incluido un artículo a dos columnas | Mejor reconstrucción observada del orden de lectura; admite `temperature` solo con `reasoning_effort = "none"` | **Sí, para conversión PDF LLM** |
@@ -20,7 +20,7 @@ eso no equivale a una garantía permanente de disponibilidad.
 
 Los valores predeterminados dependen del contexto de uso:
 
-- Gemini: `gemini-3.6-flash` es el modelo predeterminado para evaluación general
+- Gemini: `gemini-3.5-flash-lite` es el modelo predeterminado para evaluación general
   cuando `provider = "gemini"`.
 - OpenAI: `gpt-5.6-luna` es el modelo predeterminado para conversión PDF LLM
   (`conversion = "llm"`), porque fue el que mejor resolvió el artículo de dos
@@ -34,7 +34,7 @@ El modelo de conversión es independiente del modelo de evaluación. Por ejemplo
 run_article(
   article_path = "article.pdf",
   provider = "gemini",
-  model = "gemini-3.6-flash",
+  model = "gemini-3.5-flash-lite",
   conversion = "llm",
   conversion_provider = "openai",
   conversion_model = "gpt-5.6-luna"

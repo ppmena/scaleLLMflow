@@ -12,7 +12,7 @@ extract_article_text(
   cache_markdown = TRUE,
   conversion = "basic",
   provider = "gemini",
-  model = "gemini-3.6-flash",
+  model = "gemini-3.5-flash-lite",
   conversion_prompt = NULL,
   temperature = 0,
   max_chars = 50000,

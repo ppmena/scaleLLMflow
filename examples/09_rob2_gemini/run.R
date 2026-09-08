@@ -4,7 +4,9 @@ library(scaleLLMflow)
 example_dir <- "examples/09_rob2_gemini"
 articles_dir <- file.path(example_dir, "articles")
 gemini_key <- Sys.getenv("GOOGLE_GEMINI_KEY", unset = Sys.getenv("GEMINI_API_KEY", unset = ""))
+google_cloud_project <- Sys.getenv("GOOGLE_CLOUD_PROJECT", unset = "gen-lang-client-0051865910")
 stopifnot(nzchar(gemini_key))
+stopifnot(nzchar(google_cloud_project))
 mds <- list.files(articles_dir, pattern = "\\.md$", full.names = TRUE, ignore.case = TRUE)
 stopifnot(length(mds) == 16)
 run <- run_dataset(
@@ -18,6 +20,7 @@ run <- run_dataset(
   tables_advanced = TRUE,
   conversion = "basic",
   api_key = gemini_key,
+  project_id = google_cloud_project,
   temperature = 0,
   top_p = 0.1,
   max_retries = 3,

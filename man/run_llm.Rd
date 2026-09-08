@@ -7,7 +7,7 @@
 run_llm(
   prompt,
   provider = "gemini",
-  model = "gemini-3.6-flash",
+  model = "gemini-3.5-flash-lite",
   temperature = 0,
   top_p = 0.1,
   timeout = 300,
