@@ -5,7 +5,7 @@
 #' and Claude APIs, discover live provider model catalogues, validate responses,
 #' parse item scores, and write audit logs and evidence reports.
 #'
-#' The bundled registry currently contains MQS and PEDro. Each scale includes
+#' The bundled registry currently contains MQS, PEDro, and RoB 2. Each scale includes
 #' one accepted `prompt.md` and `metadata.json` per scale. Experimental prompt
 #' variants belong in external training registries. API keys are read from the user's
 #' environment or supplied in memory and are never stored by the package.

@@ -1,8 +1,8 @@
 # Skill: add a document-assessment scale to scaleLLMflow
 
-**Linked package version:** `scaleLLMflow 0.3.7`  
+**Linked package version:** `scaleLLMflow 0.4.1`
 **Compatibility:** This guide describes the registry, Markdown extraction, and
-local prompt-training interfaces available in version `0.3.7`. Review the
+local prompt-training interfaces available in version `0.4.1`. Review the
 package changelog and this version marker when using a later release.
 
 ## Purpose
@@ -264,3 +264,36 @@ snapshot in a separate directory. Four initial iterations are generally enough;
 agreement with the training key is calibration, not general scientific
 validation, so test the selected prompt on new articles and an independent
 reference set.
+
+## Additional safeguards for proposal-based prompts
+
+Treat a supplied prompt as a scientific specification, not as a drop-in package
+file. Before registering it:
+
+- Put exactly one un-commented `RUN_VERSION: vNNN` line at the beginning of
+  `prompt.md`, matching `metadata.json$prompt_version`. `# RUN_VERSION: ...`
+  is not valid.
+- Separate free-text metadata (study ID, interventions, outcome, and numerical
+  estimate) from scored items. Declare those IDs in
+  `response_schema.free_text_items`; do not force them through numeric score
+  validation.
+- Do not invent an additive total. If the source scale has no official sum, use
+  `scale_definition.total.method: "none"`, an empty `items` array, and report
+  `Total_Score = NA`.
+- Preserve the source output contract. For a flat response, use a dedicated
+  schema type such as `rob2_lines`; parse only lines matching
+  `* Item <Named_ID>: <Value> | Justification: ...`, require every declared
+  item, and preserve the raw categorical response in audit/evidence output.
+- Map categorical decisions to numeric CSV encodings only at the score
+  boundary, document the mapping in metadata, and leave missing/invalid values
+  as `NA` rather than guessing.
+- Do not pass a custom flat-line schema to `build_gemini_json_schema()` or the
+  provider JSON-schema option. Bypass provider schema enforcement for that
+  format, while leaving existing JSON and legacy-line scales unchanged.
+
+For every such scale, add a parser smoke test through `resolve_prompt()` that
+covers all named IDs, an underscore-containing ID, quoted/separator-containing
+justification text, free-text metadata, `NA`, invalid-item rejection, and the
+declared total policy. Finally run the complete test suite and install from an
+ASCII temporary path when Windows/R cannot resolve a repository path containing
+accented characters.

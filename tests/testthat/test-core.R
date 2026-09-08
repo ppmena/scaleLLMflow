@@ -120,3 +120,25 @@ testthat::test_that("reference stripping requires a section heading", {
   testthat::expect_match(stripped, "conclusion remains")
   testthat::expect_false(grepl("Smith 2020", stripped, fixed = TRUE))
 })
+
+testthat::test_that("RoB 2 flat-line responses are validated and encoded", {
+  metadata <- scaleLLMflow:::resolve_prompt("rob2", "test-model")$metadata
+  ids <- scaleLLMflow:::rob2_item_ids()
+  values <- c("Trial", "Drug", "Placebo", "Mortality", "RR 1.2", "assignment",
+    rep("N", 28))
+  values[c(10, 18, 23, 29, 33)] <- "Some"
+  values[34] <- "High"
+  response <- paste(sprintf("* Item %s: %s | Justification: quote", ids, values), collapse = "\n")
+  scores <- scaleLLMflow:::parse_scale_scores(response, ids, metadata)
+  testthat::expect_equal(scores[["Item_D1_1"]], 0)
+  testthat::expect_equal(scores[["Item_D1_Judgement"]], 0.5)
+  testthat::expect_equal(scores[["Item_Overall_Judgement"]], 1)
+  testthat::expect_true(is.na(scores[["Item_Study_ID"]]))
+  testthat::expect_true(is.na(scaleLLMflow:::calculate_scale_total(scores, metadata)))
+})
+
+testthat::test_that("Markdown structuring accepts PDF list text on Windows", {
+  structured <- scaleLLMflow::structure_article_markdown("Introduction\\n- participant\\n* outcome")
+  testthat::expect_match(structured, "participant")
+  testthat::expect_match(structured, "outcome")
+})

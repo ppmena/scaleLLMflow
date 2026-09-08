@@ -282,6 +282,11 @@ run_llm <- function(prompt, provider = "gemini", model = "gemini-3.6-flash",
                     retry_wait_seconds = 1, retry_backoff = 2,
                     rate_limit_seconds = 0, response_schema = NULL,
                     reasoning_effort = NULL) {
+  # RoB 2 deliberately uses the proposal's flat-line schema; provider JSON
+  # schema enforcement would reject that response format before our validator.
+  if (!is.null(response_schema) && identical(response_schema$type, "rob2_lines")) {
+    response_schema <- NULL
+  }
   provider <- provider_alias(provider)
 
   if (provider == "gemini") {
