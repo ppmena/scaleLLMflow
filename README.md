@@ -77,7 +77,7 @@ registry does not attempt to maintain a static list of every available model.
 
 Supported provider values are `gemini`, `openai`, and `claude` (with `chatgpt`
 as an OpenAI alias and `anthropic` as a Claude alias). Claude uses Anthropic's
-Messages API. The bundled MQS and PEDro prompts are scale-level and independent
+Messages API. The bundled MQS, PEDro, and RoB 2 prompts are scale-level and independent
 of the selected Claude model.
 
 Prompt selection is independent of model availability. The official resolver
@@ -158,6 +158,12 @@ audit$checks
 ```
 
 To add a scale, see [ADD_NEW_SCALE_SKILL.md](ADD_NEW_SCALE_SKILL.md).
+
+For Cochrane RoB 2 parallel-group randomized trials, use `scale = "rob2"`.
+The categorical decisions are retained in evidence and audit output; CSV score
+columns use the documented encoding (`N = 0`, `PN = 0.25`, `NI = 0.5`,
+`PY = 0.75`, `Y = 1`, and `Low/Some/High = 0/0.5/1`). RoB 2 has no official
+additive total, so `Total_Score` is `NA`.
 
 ### Local prompt training
 

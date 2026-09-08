@@ -72,6 +72,7 @@ compare_reference_scores <- function(scores, reference_scores, items) {
 scale_default_items <- function(scale, items) {
   if (!is.null(items)) return(items)
   if (tolower(scale) == "pedro") return(1:11)
+  if (tolower(scale) == "rob2") return(rob2_item_ids())
   1:10
 }
 

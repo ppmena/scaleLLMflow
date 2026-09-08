@@ -1,3 +1,11 @@
+# scaleLLMflow 0.4.1
+
+## RoB 2 scale registry
+
+Adds the Cochrane RoB 2 parallel-trial risk-of-bias prompt as a provider-neutral
+scale-level registry entry. The flat-line categorical response is validated and
+retained in evidence/audit output, with stable internal encoding for reports.
+
 # scaleLLMflow 0.4.0
 
 ## First stable release

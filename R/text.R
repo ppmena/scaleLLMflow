@@ -52,7 +52,9 @@ structure_article_markdown <- function(article_text, tables_advanced = TRUE) {
   lines <- lines[nzchar(lines)]
   out <- character(0); i <- 1L
   heading <- "^(?:[0-9]+(?:\\.[0-9]+)*[.)]?|[IVXLC]+[.)])\\s+(.+)$"
-  bullet <- "^(?:[-*•]|[0-9]+[.)])\\s+(.+)$"
+  # Keep the ASCII alternatives separate: the compact `[-*•]` character
+  # class is rejected by some Windows PCRE/locale combinations.
+  bullet <- "^(?:-|\\*|[0-9]+[.)])\\s+(.+)$"
   section_heading <- paste0(
     "^(abstract|resumen|introduction|background|objectives?|aims?|",
     "methods?|methodology|design|participants?|sample|procedure|",

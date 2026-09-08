@@ -3,7 +3,47 @@ format_scale_score <- function(score) {
     return("NA")
   }
 
-  sprintf("%.1f", as.numeric(score))
+  digits <- if (abs(as.numeric(score) * 10 - round(as.numeric(score) * 10)) > 1e-8) 2 else 1
+  formatC(as.numeric(score), format = "f", digits = digits)
+}
+
+rob2_item_ids <- function() {
+  c("Study_ID", "Experimental_Group", "Comparator_Group", "Variable_Outcome",
+    "Result_Numerical", "Effect_Interest", "D1_1", "D1_2", "D1_3",
+    "D1_Judgement", "D2_1", "D2_2", "D2_3", "D2_4", "D2_5", "D2_6",
+    "D2_7", "D2_Judgement", "D3_1", "D3_2", "D3_3", "D3_4",
+    "D3_Judgement", "D4_1", "D4_2", "D4_3", "D4_4", "D4_5",
+    "D4_Judgement", "D5_1", "D5_2", "D5_3", "D5_Judgement",
+    "Overall_Judgement")
+}
+
+rob2_decision_score <- function(decision) {
+  decision <- trimws(as.character(decision))
+  if (decision %in% c("NA", "N/A")) return(NA_real_)
+  scores <- c("N" = 0, "PN" = 0.25, "NI" = 0.5, "PY" = 0.75, "Y" = 1,
+    "Low" = 0, "Some" = 0.5, "High" = 1, "assignment" = 1, "adherence" = 1)
+  if (!decision %in% names(scores)) return(NA_real_)
+  unname(scores[[decision]])
+}
+
+parse_rob2_lines <- function(text, schema) {
+  lines <- strsplit(gsub("\\r\\n?", "\\n", text), "\\n")[[1]]
+  keys <- as.character(unlist(schema$required_item_keys, use.names = FALSE))
+  out <- setNames(vector("list", length(keys)), keys)
+  for (line in lines) {
+    hit <- stringr::str_match(line, "^\\s*\\*\\s*Item\\s+([A-Za-z][A-Za-z0-9_]*)\\s*:\\s*(.*?)\\s*\\|\\s*Justification:\\s*(.*)$")
+    if (is.na(hit[1, 2])) next
+    key <- hit[1, 2]
+    decision <- trimws(hit[1, 3])
+    decision_map <- c("Probably Yes" = "PY", "Probably No" = "PN",
+      "No Information" = "NI", "Not Applicable" = "NA",
+      "Low risk of bias" = "Low", "Some concerns" = "Some",
+      "High risk of bias" = "High")
+    if (decision %in% names(decision_map)) decision <- unname(decision_map[[decision]])
+    if (key %in% keys) out[[key]] <- list(decision = decision, evidence = trimws(hit[1, 4]), reason = trimws(hit[1, 4]))
+  }
+  if (any(vapply(out, is.null, logical(1)))) stop("RoB 2 response is missing required item(s).", call. = FALSE)
+  list(items = out)
 }
 
 # Validate the scientific scale contract before any article is scored.
@@ -21,8 +61,8 @@ validate_scale_definition <- function(metadata) {
     }
   }
   total <- definition$total
-  if (is.null(total$method) || !identical(total$method, "sum")) {
-    stop("Only the declared 'sum' total method is currently supported.", call. = FALSE)
+  if (is.null(total$method) || !total$method %in% c("sum", "none")) {
+    stop("Scale total method must be 'sum' or 'none'.", call. = FALSE)
   }
   total_items <- as.character(unlist(total$items, use.names = FALSE))
   defined_items <- names(definition$items)
@@ -37,6 +77,7 @@ validate_scale_definition <- function(metadata) {
 calculate_scale_total <- function(scores, metadata) {
   validate_scale_definition(metadata)
   total <- metadata$scale_definition$total
+  if (identical(total$method, "none")) return(NA_real_)
   total_items <- as.character(unlist(total$items, use.names = FALSE))
   selected <- as.numeric(scores[paste0("Item_", total_items)])
   excluded_values <- as.numeric(unlist(total$excluded_values, use.names = FALSE))
@@ -50,7 +91,9 @@ calculate_scale_total <- function(scores, metadata) {
 validate_scale_scores <- function(scores, items, metadata) {
   validate_scale_definition(metadata)
   definition <- metadata$scale_definition$items
+  free_text <- as.character(unlist(metadata$response_schema$free_text_items, use.names = FALSE))
   for (item in as.character(items)) {
+    if (item %in% free_text) next
     value <- scores[[paste0("Item_", item)]]
     allowed <- as.numeric(unlist(definition[[item]]$allowed_values, use.names = FALSE))
     if (!is.na(value) && !value %in% allowed) {
@@ -114,6 +157,16 @@ parse_strict_json <- function(text) {
 # The validator deliberately fails closed: malformed or incomplete ratings
 # must be retried/reviewed instead of silently becoming missing scores.
 validate_scale_response <- function(text, metadata, items) {
+  schema <- metadata$response_schema
+  if (!is.null(schema) && identical(schema$type, "rob2_lines")) {
+    response <- parse_rob2_lines(text, schema)
+    allowed <- as.character(unlist(schema$allowed_decisions, use.names = FALSE))
+    for (key in schema$required_item_keys) {
+      if (key %in% as.character(unlist(schema$free_text_items, use.names = FALSE))) next
+      if (!response$items[[key]]$decision %in% allowed) stop("Invalid RoB 2 decision for ", key, ".", call. = FALSE)
+    }
+    return(response)
+  }
   response <- parse_strict_json(text)
   schema <- metadata$response_schema
   if (is.null(schema) || identical(schema$type, "legacy_lines")) return(response)
@@ -227,7 +280,7 @@ get_item_score <- function(item_number, txt) {
   item_pattern <- paste0(
     "(?ims)(?:^|\\n)\\s*(?:[\\*-]\\s*)?Item\\s*",
     item_number,
-    "\\s*:\\s*(?:Score\\s*)?([0-9](?:[\\.,][0-9])?)\\b"
+    "\\s*:\\s*(?:Score\\s*)?([0-9](?:[\\.,][0-9]{1,2})?)\\b"
   )
 
   score_match <- stringr::str_match(txt, item_pattern)
@@ -250,6 +303,7 @@ json_item_score <- function(item_number, response, metadata) {
       length(decision), ".", call. = FALSE)
   }
   if (tolower(decision) %in% c("yes", "no")) return(ifelse(tolower(decision) == "yes", 1, 0))
+  if (identical(metadata$response_schema$type, "rob2_lines")) return(rob2_decision_score(decision))
   as.numeric(decision)
 }
 
