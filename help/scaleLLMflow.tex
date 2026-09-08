@@ -195,7 +195,7 @@ extract_article_text(
   cache_markdown = TRUE,
   conversion = "basic",
   provider = "gemini",
-  model = "gemini-3.6-flash",
+  model = "gemini-3.5-flash-lite",
   conversion_prompt = NULL,
   temperature = 0,
   max_chars = 50000,
@@ -307,7 +307,7 @@ propose_prompt_revision(
   comparison,
   reason_files,
   provider = "gemini",
-  model = "gemini-3.6-flash",
+  model = "gemini-3.5-flash-lite",
   api_key = NULL,
   project_id = NULL,
   temperature = 0,
@@ -389,7 +389,7 @@ run_article(
   article_path = NULL,
   scale = "mqs",
   provider = "gemini",
-  model = "gemini-3.6-flash",
+  model = "gemini-3.5-flash-lite",
   registry_dir = NULL,
   filetype = "auto",
   strip_references = TRUE,
@@ -428,7 +428,7 @@ run_article(
 
 \item[\code{provider}] LLM provider. Defaults to \code{"gemini"}.
 
-\item[\code{model}] Requested model. Defaults to \code{"gemini-3.6-flash"}.
+\item[\code{model}] Requested model. Defaults to \code{"gemini-3.5-flash-lite"}.
 
 \item[\code{registry\_dir}] Optional prompt registry root.
 
@@ -482,7 +482,7 @@ run_dataset(
   articles_dir,
   scale = "mqs",
   provider = "gemini",
-  model = "gemini-3.6-flash",
+  model = "gemini-3.5-flash-lite",
   output_dir,
   registry_dir = NULL,
   filetype = "auto",
@@ -562,7 +562,7 @@ Call a supported LLM provider with user-owned API credentials.
 run_llm(
   prompt,
   provider = "gemini",
-  model = "gemini-3.6-flash",
+  model = "gemini-3.5-flash-lite",
   temperature = 0,
   top_p = 0.1,
   timeout = 300,

@@ -113,7 +113,7 @@ when a missing item invalidates the total, or `"ignore"` only when the scale's
 official scoring rules permit it. Use `included_in_total: false` for reported
 items such as PEDro item 1, which is coded but excluded from the official score.
 
-Never change the default model `gemini-3.6-flash` unless the task explicitly
+Never change the default model `gemini-3.5-flash-lite` unless the task explicitly
 requires a different test. Never store API keys in the library.
 
 ## Private local registries without a package update

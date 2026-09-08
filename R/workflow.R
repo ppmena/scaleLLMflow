@@ -137,7 +137,7 @@ build_audit_log <- function(clean_id, provider, model, strip_references, call_lo
 #' @param article_path Article path. Supported extensions are `.pdf`, `.txt`, and `.md`.
 #' @param scale Scale name. Defaults to `"mqs"`.
 #' @param provider LLM provider. Defaults to `"gemini"`.
-#' @param model Requested model. Defaults to `"gemini-3.6-flash"`.
+#' @param model Requested model. Defaults to `"gemini-3.5-flash-lite"`.
 #' @param registry_dir Optional prompt registry root.
 #' @param filetype One of `"auto"`, `"pdf"`, `"txt"`, or `"md"`.
 #' @param strip_references Whether to remove references before the LLM call.
@@ -161,7 +161,7 @@ build_audit_log <- function(clean_id, provider, model, strip_references, call_lo
 #' @param reference_scores Optional reviewed scores for reference validation.
 #' @param validation_mode Either `"free"` or `"reference"`.
 #' @export
-run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini", model = "gemini-3.6-flash",
+run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini", model = "gemini-3.5-flash-lite",
                         registry_dir = NULL, filetype = "auto", strip_references = TRUE, tables_advanced = TRUE, cache_markdown = TRUE,
                         conversion = "basic", conversion_provider = "openai", conversion_model = "gpt-5.6-luna", conversion_prompt = NULL,
                         max_chars = 50000,
@@ -314,7 +314,7 @@ run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini",
 #' @return A list containing the timestamped run directory, consensus report,
 #' consolidated evidence report, and errors when any occurred.
 #' @export
-run_dataset <- function(articles_dir, scale = "mqs", provider = "gemini", model = "gemini-3.6-flash",
+run_dataset <- function(articles_dir, scale = "mqs", provider = "gemini", model = "gemini-3.5-flash-lite",
                         output_dir, registry_dir = NULL, filetype = "auto", strip_references = TRUE, tables_advanced = TRUE, cache_markdown = TRUE,
                         conversion = "basic", conversion_provider = "openai", conversion_model = "gpt-5.6-luna", conversion_prompt = NULL, max_articles = 0,
                         max_chars = 50000,

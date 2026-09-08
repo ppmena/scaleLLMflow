@@ -8,7 +8,7 @@ package_dir <- normalizePath(file.path(example_dir, "..", ".."), mustWork = TRUE
 pkgload::load_all(package_dir, quiet = TRUE)
 run <- scaleLLMflow::run_dataset(
   file.path(example_dir, "articles"), scale = "mqs", provider = "gemini",
-  model = "gemini-3.6-flash", output_dir = file.path(example_dir, "results"),
+  model = "gemini-3.5-flash-lite", output_dir = file.path(example_dir, "results"),
   filetype = "pdf", temperature = 0
 )
 print(run$results)

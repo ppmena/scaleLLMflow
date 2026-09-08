@@ -312,7 +312,7 @@ call_claude <- function(prompt, model, temperature = 0, timeout = 300,
 #'   `"none"`, `"low"`, or `"medium"`. GPT-5.6 models require
 #'   `"none"` when `temperature` is used; otherwise temperature is omitted.
 #' @export
-run_llm <- function(prompt, provider = "gemini", model = "gemini-3.6-flash",
+run_llm <- function(prompt, provider = "gemini", model = "gemini-3.5-flash-lite",
                     temperature = 0, top_p = 0.1, timeout = 300,
                     api_key = NULL, project_id = NULL, max_retries = 3,
                     retry_wait_seconds = 1, retry_backoff = 2,

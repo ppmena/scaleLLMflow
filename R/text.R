@@ -206,7 +206,7 @@ extract_pdf_text <- function(pdf_path, strip_references = TRUE, tables_advanced 
 extract_article_text <- function(file_path, filetype = "auto", strip_references = TRUE,
                                  tables_advanced = TRUE, cache_markdown = TRUE,
                                  conversion = "basic", provider = "gemini",
-                                 model = "gemini-3.6-flash", conversion_prompt = NULL,
+                                 model = "gemini-3.5-flash-lite", conversion_prompt = NULL,
                                  temperature = 0, max_chars = 50000, ...) {
   if (!file.exists(file_path)) {
     stop("Article file not found: ", file_path, call. = FALSE)

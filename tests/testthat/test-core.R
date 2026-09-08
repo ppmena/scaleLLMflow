@@ -32,6 +32,12 @@ test_that("Gemini resolves its billing project from the environment", {
   expect_equal(scaleLLMflow:::resolve_gemini_project("explicit-project"), "explicit-project")
 })
 
+test_that("Gemini Lite is the default model across workflows", {
+  expect_identical(formals(scaleLLMflow::run_llm)$model, "gemini-3.5-flash-lite")
+  expect_identical(formals(scaleLLMflow::run_article)$model, "gemini-3.5-flash-lite")
+  expect_identical(formals(scaleLLMflow::run_dataset)$model, "gemini-3.5-flash-lite")
+})
+
 test_that("provenance contains stable hashes and execution metadata", {
   expect_equal(nchar(scaleLLMflow:::sha256_text("hello")), 64)
   metadata <- scaleLLMflow:::resolve_prompt("mqs", "gemini-2.5-flash")

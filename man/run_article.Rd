@@ -8,7 +8,7 @@ run_article(
   article_path = NULL,
   scale = "mqs",
   provider = "gemini",
-  model = "gemini-3.6-flash",
+  model = "gemini-3.5-flash-lite",
   registry_dir = NULL,
   filetype = "auto",
   strip_references = TRUE,
@@ -44,7 +44,7 @@ run_article(
 
 \item{provider}{LLM provider. Defaults to \code{"gemini"}.}
 
-\item{model}{Requested model. Defaults to \code{"gemini-3.6-flash"}.}
+\item{model}{Requested model. Defaults to \code{"gemini-3.5-flash-lite"}.}
 
 \item{registry_dir}{Optional prompt registry root.}
 

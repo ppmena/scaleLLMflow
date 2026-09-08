@@ -68,7 +68,7 @@ compare_training_iterations <- function(ideal_csv, iterations_dir) {
 #' @return A list with the proposed prompt, source paths, provider, and model.
 #' @export
 propose_prompt_revision <- function(prompt_path, comparison, reason_files,
-                                    provider = "gemini", model = "gemini-3.6-flash",
+                                    provider = "gemini", model = "gemini-3.5-flash-lite",
                                     api_key = NULL, project_id = NULL,
                                     temperature = 0, timeout = 300, output_path = NULL) {
   if (!file.exists(prompt_path)) stop("Prompt not found: ", prompt_path, call. = FALSE)
