@@ -38,10 +38,10 @@ test_that("Gemini Lite is the default model across workflows", {
   expect_identical(formals(scaleLLMflow::run_dataset)$model, "gemini-3.5-flash-lite")
 })
 
-test_that("RoB 2 v006 applies the calibration safeguards", {
+test_that("RoB 2 v007 applies calibration and textual-value safeguards", {
   resolved <- scaleLLMflow:::resolve_prompt("rob2", "gpt-5.6-luna", provider = "openai")
   prompt <- paste(readLines(resolved$prompt_path, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
-  expect_equal(resolved$metadata$prompt_version, "v006")
+  expect_equal(resolved$metadata$prompt_version, "v007")
   expect_match(prompt, "ordinary non-adherence or non-compliance")
   expect_match(prompt, "resentful demoralization")
   expect_match(prompt, "Answer `NA` if 2.1 and 2.2 are `N`/`PN`")
@@ -53,6 +53,8 @@ test_that("RoB 2 v006 applies the calibration safeguards", {
   expect_match(prompt, "`NI` means uncertainty, not evidence of bias")
   expect_match(prompt, "Never upgrade simply to be cautious")
   expect_match(prompt, "Do not infer bias from the numerical result itself")
+  expect_match(prompt, "Use original categorical values only")
+  expect_match(prompt, "must not influence your reasoning")
 })
 
 test_that("RoB 2 excludes contextual metadata fields from the scoring contract", {
