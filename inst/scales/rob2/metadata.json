@@ -2,7 +2,7 @@
   "scale": "rob2",
   "model": "scale",
   "provider": "all",
-  "prompt_version": "v006",
+  "prompt_version": "v007",
   "status": "accepted",
   "source_prompt": "rob2-prompt.md",
   "items": 28,

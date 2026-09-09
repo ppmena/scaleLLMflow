@@ -9,7 +9,7 @@ resolved prompt, prompt provenance, audit logs, evidence, consensus scores,
 and any errors.
 
 The provider is `openai`, the model is `gpt-5.6-luna`, and the registered RoB 2
-prompt revision is `v006`. The example uses `filetype = "md"` and does not
+prompt revision is now `v007`. The example uses `filetype = "md"` and does not
 convert PDFs during execution. RoB 2 has no official additive total; the
 consensus report therefore keeps `Total_Score` as `NA`.
 
