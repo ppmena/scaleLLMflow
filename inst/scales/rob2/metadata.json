@@ -2,21 +2,20 @@
   "scale": "rob2",
   "model": "scale",
   "provider": "all",
-  "prompt_version": "v005",
+  "prompt_version": "v006",
   "status": "accepted",
   "source_prompt": "rob2-prompt.md",
-  "items": 29,
+  "items": 28,
   "response_schema": {
     "type": "rob2_lines",
-    "required_item_keys": ["Effect_Interest", "D1_1", "D1_2", "D1_3", "D1_Judgement", "D2_1", "D2_2", "D2_3", "D2_4", "D2_5", "D2_6", "D2_7", "D2_Judgement", "D3_1", "D3_2", "D3_3", "D3_4", "D3_Judgement", "D4_1", "D4_2", "D4_3", "D4_4", "D4_5", "D4_Judgement", "D5_1", "D5_2", "D5_3", "D5_Judgement", "Overall_Judgement"],
+    "required_item_keys": ["D1_1", "D1_2", "D1_3", "D1_Judgement", "D2_1", "D2_2", "D2_3", "D2_4", "D2_5", "D2_6", "D2_7", "D2_Judgement", "D3_1", "D3_2", "D3_3", "D3_4", "D3_Judgement", "D4_1", "D4_2", "D4_3", "D4_4", "D4_5", "D4_Judgement", "D5_1", "D5_2", "D5_3", "D5_Judgement", "Overall_Judgement"],
     "required_item_fields": ["decision", "evidence", "reason"],
-    "free_text_items": ["Effect_Interest"],
+    "free_text_items": [],
     "allowed_decisions": ["Y", "PY", "PN", "N", "NI", "NA", "Low", "Some", "High", "assignment", "adherence"]
   },
   "score_encoding": {"N": 0, "PN": 0.25, "NI": 0.5, "PY": 0.75, "Y": 1, "Low": 0, "Some": 0.5, "High": 1},
   "scale_definition": {
     "items": {
-      "Effect_Interest": {"label": "Review effect of interest", "allowed_values": ["assignment", "adherence"], "included_in_total": false},
       "D1_1": {"label": "Random allocation sequence", "allowed_values": [0, 0.25, 0.5, 0.75, 1], "included_in_total": false},
       "D1_2": {"label": "Allocation concealment", "allowed_values": [0, 0.25, 0.5, 0.75, 1], "included_in_total": false},
       "D1_3": {"label": "Baseline imbalance", "allowed_values": [0, 0.25, 0.5, 0.75, 1], "included_in_total": false},

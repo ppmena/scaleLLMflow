@@ -290,10 +290,11 @@ file. Before registering it:
 - Put exactly one un-commented `RUN_VERSION: vNNN` line at the beginning of
   `prompt.md`, matching `metadata.json$prompt_version`. `# RUN_VERSION: ...`
   is not valid.
-- Separate free-text metadata (study ID, interventions, outcome, and numerical
-  estimate) from scored items. Declare those IDs in
-  `response_schema.free_text_items`; do not force them through numeric score
-  validation.
+- Separate workflow context (study ID, interventions, outcome, numerical
+  estimate, or effect of interest) from scored items. Include context in the
+  prompt only when the analysis needs it; do not emit context as a required
+  output item unless it is genuinely part of the scale contract, and never
+  force it through numeric score validation.
 - Do not invent an additive total. If the source scale has no official sum, use
   `scale_definition.total.method: "none"`, an empty `items` array, and report
   `Total_Score = NA`.

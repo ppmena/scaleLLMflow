@@ -38,10 +38,10 @@ test_that("Gemini Lite is the default model across workflows", {
   expect_identical(formals(scaleLLMflow::run_dataset)$model, "gemini-3.5-flash-lite")
 })
 
-test_that("RoB 2 v005 applies the calibration safeguards", {
+test_that("RoB 2 v006 applies the calibration safeguards", {
   resolved <- scaleLLMflow:::resolve_prompt("rob2", "gpt-5.6-luna", provider = "openai")
   prompt <- paste(readLines(resolved$prompt_path, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
-  expect_equal(resolved$metadata$prompt_version, "v005")
+  expect_equal(resolved$metadata$prompt_version, "v006")
   expect_match(prompt, "ordinary non-adherence or non-compliance")
   expect_match(prompt, "resentful demoralization")
   expect_match(prompt, "Answer `NA` if 2.1 and 2.2 are `N`/`PN`")
@@ -57,13 +57,13 @@ test_that("RoB 2 v005 applies the calibration safeguards", {
 
 test_that("RoB 2 excludes contextual metadata fields from the scoring contract", {
   removed <- c("Item_Study_ID", "Item_Experimental_Group", "Item_Comparator_Group",
-    "Item_Variable_Outcome", "Item_Result_Numerical")
+    "Item_Variable_Outcome", "Item_Result_Numerical", "Item_Effect_Interest")
   ids <- scaleLLMflow:::rob2_item_ids()
   metadata <- scaleLLMflow:::resolve_prompt("rob2", "gpt-5.6-luna", provider = "openai")$metadata
   expect_false(any(sub("^Item_", "", removed) %in% ids))
   expect_false(any(removed %in% metadata$response_schema$required_item_keys))
   expect_false(any(sub("^Item_", "", removed) %in% names(metadata$scale_definition$items)))
-  expect_equal(metadata$items, 29)
+  expect_equal(metadata$items, 28)
 })
 
 test_that("provenance contains stable hashes and execution metadata", {
@@ -177,15 +177,16 @@ testthat::test_that("reference stripping requires a section heading", {
 testthat::test_that("RoB 2 flat-line responses are validated and encoded", {
   metadata <- scaleLLMflow:::resolve_prompt("rob2", "test-model")$metadata
   ids <- scaleLLMflow:::rob2_item_ids()
-  values <- c("assignment", rep("N", 28))
-  values[c(5, 13, 18, 24, 28)] <- "Some"
-  values[29] <- "High"
+  values <- rep("N", 28)
+  values[c(4, 12, 17, 23, 27)] <- "Some"
+  values[28] <- "High"
   response <- paste(sprintf("* Item %s: %s | Justification: quote", ids, values), collapse = "\n")
   scores <- scaleLLMflow:::parse_scale_scores(response, ids, metadata)
   testthat::expect_equal(scores[["Item_D1_1"]], 0)
   testthat::expect_equal(scores[["Item_D1_Judgement"]], 0.5)
   testthat::expect_equal(scores[["Item_Overall_Judgement"]], 1)
   testthat::expect_false("Item_Study_ID" %in% names(scores))
+  testthat::expect_false("Item_Effect_Interest" %in% names(scores))
   testthat::expect_true(is.na(scaleLLMflow:::calculate_scale_total(scores, metadata)))
 })
 
