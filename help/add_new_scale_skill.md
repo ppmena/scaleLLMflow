@@ -304,6 +304,14 @@ file. Before registering it:
 - Map categorical decisions to numeric CSV encodings only at the score
   boundary, document the mapping in metadata, and leave missing/invalid values
   as `NA` rather than guessing.
+- Add an explicit calibration rule for ordinal judgements: distinguish
+  signalling answers from domain judgements; treat `NI`, incomplete reporting,
+  lack of blinding, a striking numerical result, or a generic possibility as
+  uncertainty rather than evidence of `High`. Reserve `High` for direct or
+  compelling study-specific evidence of a plausible material bias mechanism,
+  and use `Some` when uncertainty prevents `Low`. Never upgrade merely to be
+  conservative, and test this rule with examples where human raters reject an
+  overcalled `High`.
 - Do not pass a custom flat-line schema to `build_gemini_json_schema()` or the
   provider JSON-schema option. Bypass provider schema enforcement for that
   format, while leaving existing JSON and legacy-line scales unchanged.
