@@ -1,4 +1,4 @@
-RUN_VERSION: v005
+RUN_VERSION: v006
 
 # SYSTEM PROMPT FOR COCHRANE RoB 2 BIAS ASSESSMENT (PARALLEL RANDOMIZED TRIALS)
 
@@ -189,8 +189,6 @@ Calculate the final `Overall_Judgement` for the numerical result according to Co
 ## 5. REQUIRED OUTPUT SCHEMA
 
 To ensure compatibility with the `scaleLLMflow` parser, you must generate your response **strictly** using the flat-line prefix schema below. Every line must begin with an asterisk (`*`) and strictly follow the format `Item [ID]: [Value] | Justification: [Justification and quotes]`. Do not include any introduction, conversational filler, preambles, or post-conclusions outside this structured format.
-
-* Item Effect_Interest: [assignment / adherence] | Justification: Declaration of evaluated intervention effect (assignment [ITT] or adherence [Per-Protocol]).
 
 - DOMAIN ASSESSMENT
 * Item D1_1: [Y/PY/PN/N/NI] | Justification: [Detailed justification based solely on study text, including sequence generation quotes].
