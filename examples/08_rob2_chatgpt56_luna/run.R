@@ -3,10 +3,10 @@
 
 library(scaleLLMflow)
 
-articles_dir <- "C:/Users/jmenar/Downloads/transfer/DOCTORADO PSICOLOGIA/TRABAJO/20240325 META ANALISIS/BASE DE DATOS/Selected"
-output_dir <- file.path(articles_dir, "rob2_chatgpt56_luna_results")
+articles_dir <- "articles"
+output_dir <- "results_md_v006"
 
-stopifnot(length(list.files(articles_dir, pattern = "\\.pdf$", full.names = TRUE,
+stopifnot(length(list.files(articles_dir, pattern = "\\.md$", full.names = TRUE,
   ignore.case = TRUE)) == 16)
 
 run <- run_dataset(
@@ -15,7 +15,7 @@ run <- run_dataset(
   provider = "openai",
   model = "gpt-5.6-luna",
   output_dir = output_dir,
-  filetype = "pdf",
+  filetype = "md",
   strip_references = TRUE,
   tables_advanced = TRUE,
   conversion = "basic",
