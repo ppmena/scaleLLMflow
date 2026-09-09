@@ -8,8 +8,7 @@ format_scale_score <- function(score) {
 }
 
 rob2_item_ids <- function() {
-  c("Study_ID", "Experimental_Group", "Comparator_Group", "Variable_Outcome",
-    "Result_Numerical", "Effect_Interest", "D1_1", "D1_2", "D1_3",
+  c("Effect_Interest", "D1_1", "D1_2", "D1_3",
     "D1_Judgement", "D2_1", "D2_2", "D2_3", "D2_4", "D2_5", "D2_6",
     "D2_7", "D2_Judgement", "D3_1", "D3_2", "D3_3", "D3_4",
     "D3_Judgement", "D4_1", "D4_2", "D4_3", "D4_4", "D4_5",
