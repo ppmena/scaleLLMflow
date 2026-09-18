@@ -29,10 +29,11 @@ Configure them in `.Renviron`, the system environment, RStudio, or pass an
 API key in memory for a single call:
 
 - Gemini: `GEMINI_API_KEY` or `GOOGLE_GEMINI_KEY`
-- Gemini billing/quota project: `GOOGLE_CLOUD_PROJECT` (for example, `gen-lang-client-0051865910`)
 - OpenAI: `OPENAI_API_KEY`
 - Optional OpenAI project: `OPENAI_PROJECT_ID`
 - Claude/Anthropic: `ANTHROPIC_API_KEY` or `CLAUDE_API_KEY`
+- Mistral: `MISTRAL_API_KEY`
+- Ollama local: no API key; optional `OLLAMA_BASE_URL` (default `http://localhost:11434`)
 
 ## Quick start
 
@@ -76,10 +77,12 @@ Provider integrations are selected explicitly with `provider` and `model`.
 The provider API determines which model identifiers are available; the prompt
 registry does not attempt to maintain a static list of every available model.
 
-Supported provider values are `gemini`, `openai`, and `claude` (with `chatgpt`
-as an OpenAI alias and `anthropic` as a Claude alias). Claude uses Anthropic's
-Messages API. The bundled MQS, PEDro, and RoB 2 prompts are scale-level and independent
-of the selected Claude model.
+Supported provider values are `gemini`, `openai`, `claude`, `mistral`, and
+`ollama` (with
+`chatgpt` as an OpenAI alias and `anthropic` as a Claude alias). Claude uses
+Anthropic's Messages API, Mistral uses its OpenAI-compatible Chat Completions
+API, and Ollama uses the local Ollama API. The bundled MQS, PEDro, and RoB 2
+prompts are scale-level and independent of the selected model.
 
 Prompt selection is independent of model availability. The official resolver
 uses exactly one accepted prompt per scale; the requested provider and model
@@ -112,11 +115,49 @@ scale, use:
 available_provider_models("gemini")
 available_provider_models("openai")
 available_provider_models("claude")
+available_provider_models("mistral")
+available_provider_models("ollama")
 ```
 
-This function queries each provider's models endpoint and therefore requires
-the corresponding API key. It is intentionally not hard-coded, because the
-available model catalogue changes over time.
+This function queries each provider's models endpoint and requires the
+corresponding API key for hosted providers; local Ollama discovery uses the
+local server and needs no key. It is intentionally not hard-coded, because
+the available model catalogue changes over time.
+
+### Mistral option
+
+To use the fixed Mistral Small 4 model, configure `MISTRAL_API_KEY` and select
+`mistral-small-2603` explicitly:
+
+```r
+result <- run_article(
+  article_path = "path/to/article.pdf",
+  scale = "mqs",
+  provider = "mistral",
+  model = "mistral-small-2603"
+)
+```
+
+Mistral Studio offers a Free mode with usage and rate limits. The model is
+version-pinned for reproducibility; it is not the moving `-latest` alias.
+
+### Local Ollama option
+
+After installing Ollama and downloading a model, local execution requires no
+API key:
+
+```r
+result <- run_article(
+  article_path = "path/to/article.pdf",
+  scale = "mqs",
+  provider = "ollama",
+  model = "qwen3:8b"
+)
+```
+
+The local adapter disables Qwen's thinking mode and requests JSON output to
+keep structured scale responses bounded and parseable. Local inference speed
+depends on the computer's CPU/GPU and available memory.
 
 ## Scales and prompt registry
 

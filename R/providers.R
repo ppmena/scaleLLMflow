@@ -6,6 +6,12 @@ provider_alias <- function(provider) {
   if (provider %in% c("anthropic", "claude")) {
     return("claude")
   }
+  if (provider %in% c("mistral")) {
+    return("mistral")
+  }
+  if (provider %in% c("ollama", "local")) {
+    return("ollama")
+  }
   provider
 }
 
@@ -20,10 +26,8 @@ get_required_env <- function(names) {
 }
 
 resolve_gemini_project <- function(project_id = NULL) {
-  if (is.null(project_id) || !nzchar(project_id)) {
-    project_id <- Sys.getenv("GOOGLE_CLOUD_PROJECT", unset = "")
-  }
-  project_id
+  if (is.null(project_id)) return("")
+  as.character(project_id)
 }
 
 # Keep a process-local timestamp so sequential dataset runs do not burst the
@@ -287,6 +291,67 @@ call_claude <- function(prompt, model, temperature = 0, timeout = 300,
   result
 }
 
+call_mistral <- function(prompt, model, temperature = 0, timeout = 300,
+                         api_key = NULL, response_schema = NULL) {
+  if (is.null(api_key) || !nzchar(api_key)) {
+    api_key <- get_required_env("MISTRAL_API_KEY")
+  }
+
+  # Mistral exposes an OpenAI-compatible Chat Completions endpoint. JSON mode
+  # is used for registered structured-response scales; the prompt itself also
+  # contains the response instructions and is validated after the call.
+  body <- list(
+    model = model,
+    messages = list(list(role = "user", content = prompt)),
+    temperature = temperature
+  )
+  if (!is.null(response_schema)) {
+    body$response_format <- list(type = "json_object")
+  }
+
+  resp <- httr2::request("https://api.mistral.ai/v1/chat/completions") |>
+    httr2::req_auth_bearer_token(api_key) |>
+    httr2::req_body_json(body, auto_unbox = TRUE) |>
+    httr2::req_options(timeout = timeout) |>
+    httr2::req_perform()
+
+  parsed <- httr2::resp_body_json(resp, simplifyVector = FALSE)
+  result <- parsed$choices[[1]]$message$content %||% ""
+  if (is.list(result)) {
+    result <- paste(vapply(result, function(item) as.character(item$text %||% ""), character(1)), collapse = "")
+  }
+  if (!nzchar(result)) stop("Mistral response did not contain readable output text.", call. = FALSE)
+  result
+}
+
+call_ollama <- function(prompt, model, temperature = 0, timeout = 600,
+                        api_key = NULL, response_schema = NULL) {
+  base_url <- Sys.getenv("OLLAMA_BASE_URL", unset = "http://localhost:11434")
+  endpoint <- paste0(sub("/$", "", base_url), "/api/chat")
+  body <- list(
+    model = model,
+    messages = list(list(role = "user", content = prompt)),
+    stream = FALSE,
+    think = FALSE,
+    options = list(temperature = temperature, num_ctx = 8192, num_predict = 1536)
+  )
+  if (!is.null(response_schema)) {
+    # JSON mode is supported by Ollama and is more portable across local
+    # models than passing the full provider-specific schema.
+    body$format <- "json"
+  }
+
+  resp <- httr2::request(endpoint) |>
+    httr2::req_body_json(body, auto_unbox = TRUE) |>
+    httr2::req_options(timeout = timeout) |>
+    httr2::req_perform()
+
+  parsed <- httr2::resp_body_json(resp, simplifyVector = FALSE)
+  result <- parsed$message$content %||% ""
+  if (!nzchar(result)) stop("Ollama response did not contain readable output text.", call. = FALSE)
+  result
+}
+
 `%||%` <- function(x, y) {
   if (is.null(x)) y else x
 }
@@ -294,7 +359,8 @@ call_claude <- function(prompt, model, temperature = 0, timeout = 300,
 #' Call a supported LLM provider with user-owned API credentials.
 #'
 #' @param prompt Prompt text to send.
-#' @param provider `"gemini"`, `"openai"`, `"chatgpt"`, `"claude"`, or `"anthropic"`.
+#' @param provider `"gemini"`, `"openai"`, `"chatgpt"`, `"claude"`,
+#'   `"anthropic"`, `"mistral"`, or `"ollama"`.
 #' @param model Model id.
 #' @param temperature Sampling temperature. For GPT-5.6 models it is sent only
 #'   when `reasoning_effort = "none"`.
@@ -305,8 +371,8 @@ call_claude <- function(prompt, model, temperature = 0, timeout = 300,
 #' @param retry_backoff Multiplicative exponential-backoff factor.
 #' @param rate_limit_seconds Minimum delay between requests in this R process.
 #' @param api_key Optional in-memory API key.
-#' @param project_id Optional provider project id. For Gemini, this is sent as
-#'   the Google quota/billing project; for OpenAI it is sent as the project header.
+#' @param project_id Optional provider project id. If supplied, Gemini sends it
+#'   as the Google quota/billing project and OpenAI sends it as the project header.
 #' @param response_schema Optional registered response schema.
 #' @param reasoning_effort Optional Responses API reasoning effort, for example
 #'   `"none"`, `"low"`, or `"medium"`. GPT-5.6 models require
@@ -340,6 +406,16 @@ run_llm <- function(prompt, provider = "gemini", model = "gemini-3.5-flash-lite"
 
   if (provider == "claude") {
     return(with_retries(function() call_claude(prompt, model, temperature, timeout, api_key, response_schema),
+      provider, model, max_retries, retry_wait_seconds, retry_backoff, rate_limit_seconds))
+  }
+
+  if (provider == "mistral") {
+    return(with_retries(function() call_mistral(prompt, model, temperature, timeout, api_key, response_schema),
+      provider, model, max_retries, retry_wait_seconds, retry_backoff, rate_limit_seconds))
+  }
+
+  if (provider == "ollama") {
+    return(with_retries(function() call_ollama(prompt, model, temperature, timeout, api_key, response_schema),
       provider, model, max_retries, retry_wait_seconds, retry_backoff, rate_limit_seconds))
   }
 

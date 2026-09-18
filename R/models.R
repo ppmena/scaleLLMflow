@@ -3,13 +3,15 @@ provider_model_env <- function(provider) {
     gemini = c("GEMINI_API_KEY", "GOOGLE_GEMINI_KEY"),
     openai = "OPENAI_API_KEY",
     claude = c("ANTHROPIC_API_KEY", "CLAUDE_API_KEY"),
+    mistral = "MISTRAL_API_KEY",
+    ollama = character(0),
     character(0)
   )
 }
 
 #' List models currently available to the configured provider.
 #'
-#' @param provider `"gemini"`, `"openai"`, `"claude"`, or an alias.
+#' @param provider `"gemini"`, `"openai"`, `"claude"`, `"mistral"`, `"ollama"`, or an alias.
 #' @param api_key Optional in-memory API key. Otherwise the provider's usual
 #'   environment variables are used.
 #' @param timeout Request timeout in seconds.
@@ -19,11 +21,12 @@ provider_model_env <- function(provider) {
 available_provider_models <- function(provider, api_key = NULL, timeout = 30,
                                       supported_only = TRUE) {
   provider <- provider_alias(provider)
-  if (!provider %in% c("gemini", "openai", "claude")) {
+  if (!provider %in% c("gemini", "openai", "claude", "mistral", "ollama")) {
     stop("Unsupported provider: ", provider, call. = FALSE)
   }
-  if (is.null(api_key) || !nzchar(api_key)) {
-    api_key <- get_required_env(provider_model_env(provider))
+  env_names <- provider_model_env(provider)
+  if ((is.null(api_key) || !nzchar(api_key)) && length(env_names) > 0) {
+    api_key <- get_required_env(env_names)
   }
 
   if (provider == "openai") {
@@ -42,6 +45,24 @@ available_provider_models <- function(provider, api_key = NULL, timeout = 30,
       httr2::req_perform()
     rows <- httr2::resp_body_json(resp, simplifyVector = FALSE)$data %||% list()
     return(model_rows(provider, rows, "id", "display_name"))
+  }
+
+  if (provider == "mistral") {
+    resp <- httr2::request("https://api.mistral.ai/v1/models") |>
+      httr2::req_auth_bearer_token(api_key) |>
+      httr2::req_options(timeout = timeout) |>
+      httr2::req_perform()
+    rows <- httr2::resp_body_json(resp, simplifyVector = FALSE)$data %||% list()
+    return(model_rows(provider, rows, "id", "owned_by"))
+  }
+
+  if (provider == "ollama") {
+    base_url <- Sys.getenv("OLLAMA_BASE_URL", unset = "http://localhost:11434")
+    resp <- httr2::request(paste0(sub("/$", "", base_url), "/api/tags")) |>
+      httr2::req_options(timeout = timeout) |>
+      httr2::req_perform()
+    rows <- httr2::resp_body_json(resp, simplifyVector = FALSE)$models %||% list()
+    return(model_rows(provider, rows, "name", "name"))
   }
 
   endpoint <- "https://generativelanguage.googleapis.com/v1beta/models"
