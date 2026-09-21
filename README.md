@@ -1,8 +1,22 @@
 # scaleLLMflow
 
-`scaleLLMflow` is an R package for applying prompt-defined assessment scales to collections of PDF, TXT, or Markdown documents with an LLM.
+`scaleLLMflow` is a general-purpose R framework for applying structured, prompt-defined scientific assessment scales to local documents with large language models.
 
-The package provides the execution framework: document extraction, prompt resolution, provider calls, retries, structured-response validation, scoring, audit logs, and dataset reports. Each registered scale defines its own items, scoring rules, metadata, and response format.
+The package is model- and scale-agnostic: it provides the workflow infrastructure, while a scale registry provides the scientific definition and operational prompt. The same workflow supports bundled, private, and user-developed scales.
+
+## What the package provides
+
+- Local PDF, TXT, and Markdown workflows.
+- Scale registries with formal metadata and response schemas.
+- Provider adapters for Gemini, OpenAI, Claude, Mistral, and Ollama.
+- Provider model discovery where available.
+- Strict structured-response validation.
+- Free evaluation and reference-comparison modes.
+- Retries, exponential backoff, rate limiting, and detailed errors.
+- Audit logs with raw responses, evidence, reasons, hashes, versions, input sizes, and execution parameters.
+- Consolidated dataset reports for scores, evidence, and errors.
+- Registry auditing and duplicate-prompt checks.
+- Utilities for local prompt training and comparison.
 
 ## Installation
 
@@ -10,91 +24,95 @@ From a local checkout:
 
 ```powershell
 R CMD build .
-R CMD INSTALL scaleLLMflow_0.2.0.tar.gz
+R CMD INSTALL scaleLLMflow_0.4.2.tar.gz
 ```
 
-For development:
+For development in RStudio:
 
 ```r
 devtools::load_all("path/to/scaleLLMflow")
 ```
 
-The package requires R and the dependencies listed in `DESCRIPTION`. Tests use
-`testthat`.
+The package imports the libraries listed in `DESCRIPTION`; tests use `testthat`. The local script in `developer/` can regenerate Roxygen documentation and reinstall the package.
 
 ## Credentials
 
-Credentials are supplied by the user and are never stored by the package.
-Configure them in `.Renviron`, the system environment, RStudio, or pass an
-API key in memory for a single call:
+Credentials belong to the user and are never stored by the package. They may be defined in `.Renviron`, the operating-system environment, RStudio, or passed in memory for one call.
 
-- Gemini: `GEMINI_API_KEY` or `GOOGLE_GEMINI_KEY`
-- OpenAI: `OPENAI_API_KEY`
-- Optional OpenAI project: `OPENAI_PROJECT_ID`
-- Claude/Anthropic: `ANTHROPIC_API_KEY` or `CLAUDE_API_KEY`
-- Mistral: `MISTRAL_API_KEY`
-- Ollama local: no API key; optional `OLLAMA_BASE_URL` (default `http://localhost:11434`)
+| Provider | Environment variables |
+| --- | --- |
+| Gemini | `GEMINI_API_KEY` or `GOOGLE_GEMINI_KEY` |
+| OpenAI | `OPENAI_API_KEY`; optionally `OPENAI_PROJECT_ID` |
+| Claude | `ANTHROPIC_API_KEY` or `CLAUDE_API_KEY` |
+| Mistral | `MISTRAL_API_KEY` |
+| Ollama | No key; optionally `OLLAMA_BASE_URL` |
 
-## Quick start
+Do not commit `.Renviron` or files containing credentials.
+
+## General workflow
+
+A run makes four independent choices:
+
+1. The registered scale.
+2. The provider and model.
+3. The document or document directory.
+4. The execution mode: `free` or `reference`.
+
+The following examples deliberately use placeholders rather than a particular scale or model:
 
 ```r
 library(scaleLLMflow)
 
 available_scales()
+available_models(scale = "my_scale")
 
-result <- run_article(
+one_result <- run_article(
   article_path = "path/to/article.pdf",
-  scale = "mqs",
-  provider = "gemini",
-  model = "gemini-3.5-flash-lite",
-  filetype = "pdf"
+  scale = "my_scale",
+  provider = "my_provider",
+  model = "my_model",
+  filetype = "pdf",
+  validation_mode = "free"
 )
 
-result$scores
-result$total_score
+one_result$scores
+one_result$total_score
 ```
 
-To process a directory:
+For a directory:
 
 ```r
-results <- run_dataset(
+dataset_result <- run_dataset(
   articles_dir = "path/to/articles",
-  scale = "mqs",
-  provider = "gemini",
-  model = "gemini-3.5-flash-lite",
-  output_dir = "results",
-  filetype = "auto"
+  scale = "my_scale",
+  provider = "my_provider",
+  model = "my_model",
+  output_dir = "path/to/results",
+  filetype = "auto",
+  validation_mode = "free"
 )
 ```
 
-`filetype` accepts `pdf`, `txt`, `md`, or `auto`. Dataset runs create a
-timestamped subdirectory with scores, evidence, audit logs, and an errors file
-when any document fails.
+`filetype` accepts `pdf`, `txt`, `md`, or `auto`. Dataset runs create a new timestamped subdirectory below `output_dir`.
 
 ## Providers and models
 
-Provider integrations are selected explicitly with `provider` and `model`.
-The provider API determines which model identifiers are available; the prompt
-registry does not attempt to maintain a static list of every available model.
+Provider and model are explicit arguments. The provider selects the API adapter, and the model identifier is sent to that provider. Model catalogues change over time and are not hard-coded into the general workflow.
 
-Supported provider values are `gemini`, `openai`, `claude`, `mistral`, and
-`ollama` (with
-`chatgpt` as an OpenAI alias and `anthropic` as a Claude alias). Claude uses
-Anthropic's Messages API, Mistral uses its OpenAI-compatible Chat Completions
-API, and Ollama uses the local Ollama API. The bundled MQS, PEDro, and RoB 2
-prompts are scale-level and independent of the selected model.
+```r
+available_provider_models("my_provider")
+```
 
-Prompt selection is independent of model availability. The official resolver
-uses exactly one accepted prompt per scale; the requested provider and model
-only control the API call. MQS therefore uses one provider-neutral prompt for
-all supported models.
+This queries the provider when a models endpoint is available. Hosted providers require credentials; local Ollama discovery requires a running Ollama server.
 
-Generation and resilience options can be passed to `run_article()` and
-`run_dataset()`:
+Generation and reliability parameters are available in both `run_article()` and `run_dataset()`:
 
 ```r
 result <- run_article(
   article_path = "path/to/article.pdf",
+  scale = "my_scale",
+  provider = "my_provider",
+  model = "my_model",
   temperature = 0,
   top_p = 0.1,
   timeout = 300,
@@ -105,242 +123,87 @@ result <- run_article(
 )
 ```
 
-For reproducible scoring, use a low temperature and record the prompt,
-provider, model, and runtime settings in the audit output.
+Parameter support depends on the provider. Supplied parameters are recorded in audit metadata.
 
-To inspect the models currently exposed by a provider, independently of any
-scale, use:
+## Scales and registries
 
-```r
-available_provider_models("gemini")
-available_provider_models("openai")
-available_provider_models("claude")
-available_provider_models("mistral")
-available_provider_models("ollama")
-```
+The package separates the scientific scale definition, the operational prompt, and the numeric representation used in reports.
 
-This function queries each provider's models endpoint and requires the
-corresponding API key for hosted providers; local Ollama discovery uses the
-local server and needs no key. It is intentionally not hard-coded, because
-the available model catalogue changes over time.
-
-### Mistral option
-
-To use the fixed Mistral Small 4 model, configure `MISTRAL_API_KEY` and select
-`mistral-small-2603` explicitly:
-
-```r
-result <- run_article(
-  article_path = "path/to/article.pdf",
-  scale = "mqs",
-  provider = "mistral",
-  model = "mistral-small-2603"
-)
-```
-
-Mistral Studio offers a Free mode with usage and rate limits. The model is
-version-pinned for reproducibility; it is not the moving `-latest` alias.
-
-### Local Ollama option
-
-After installing Ollama and downloading a model, local execution requires no
-API key:
-
-```r
-result <- run_article(
-  article_path = "path/to/article.pdf",
-  scale = "mqs",
-  provider = "ollama",
-  model = "qwen3:8b"
-)
-```
-
-The local adapter disables Qwen's thinking mode and requests JSON output to
-keep structured scale responses bounded and parseable. Local inference speed
-depends on the computer's CPU/GPU and available memory.
-
-## Scales and prompt registry
-
-Registered scales live under `inst/scales`:
-
-Article text is converted to Markdown before it is appended to the scale
-prompt. Headings, bullet points, and conservative whitespace-separated table
-blocks are preserved as Markdown structures. This behaviour is controlled by
-`tables_advanced`, which defaults to `TRUE` in `extract_article_text()`,
-`run_article()`, and `run_dataset()`. Set it to `FALSE` to send extracted text
-without this structuring pass.
+A registry can be bundled under `inst/scales` or stored in a private directory supplied through `registry_dir`:
 
 ```text
-inst/scales/<scale>/
-  prompt.md
-  metadata.json
+scales/
+  my_scale/
+    prompt.md
+    metadata.json
 ```
 
-The prompt contains the operational instructions for the LLM. `metadata.json`
-declares the formal item definition, allowed decisions, total-score rules, and
-the response schema. These two files must agree. Every official prompt must
-begin with a single `RUN_VERSION: <version>` line, and that value must exactly
-match `metadata.json$prompt_version`. A prompt without a matching version is
-rejected by the registry audit and resolver.
+`prompt.md` contains operational instructions for the model. `metadata.json` must define:
 
-The response schema is fail-closed: malformed JSON, missing items, unexpected
-decisions, or missing required fields are rejected rather than silently scored.
-Each item result contains a decision, evidence, and reason.
+- the scale and prompt version;
+- every item and its label;
+- permitted values or categorical decisions;
+- whether each item contributes to the total;
+- the total-score rule and missing-value policy;
+- the strict response schema;
+- the fields required for evidence and reasoning.
 
-To inspect the registry:
+Metadata is authoritative for validation and total-score calculation. The prompt must agree with it but is not the source of the scientific rules.
+
+Inspect or validate a registry:
 
 ```r
-available_scales()
-resolved <- resolve_prompt("mqs", "gemini-3.5-flash-lite")
-resolved$prompt_path
-resolved$prompt_version
+available_scales(registry_dir = "scales")
 
-audit <- audit_model_registry(output_dir = "results/registry_audit")
-audit$checks
-```
-
-To add a scale, see [ADD_NEW_SCALE_SKILL.md](ADD_NEW_SCALE_SKILL.md).
-
-For Cochrane RoB 2 parallel-group randomized trials, use `scale = "rob2"`.
-The categorical decisions are retained in evidence and audit output; CSV score
-columns use the documented encoding (`N = 0`, `PN = 0.25`, `NI = 0.5`,
-`PY = 0.75`, `Y = 1`, and `Low/Some/High = 0/0.5/1`). RoB 2 has no official
-additive total, so `Total_Score` is `NA`.
-
-### Local prompt training
-
-Prompts can be refined in a private training project without changing the
-package registry. Copy a scale prompt and its `metadata.json` to a local
-`scales/<scale>/` folder, run the articles into separate
-`iterations/iteration_N` directories, and compare them with a reviewed
-`ideal.csv`:
-
-```r
-run <- run_dataset(
-  "training/my_mqs/articles", scale = "mqs", provider = "gemini",
-  model = "gemini-3.5-flash-lite", registry_dir = "training/my_mqs/scales",
-  output_dir = "training/my_mqs/iterations/iteration_1",
-  temperature = 0, tables_advanced = TRUE
-)
-
-comparison <- compare_training_iterations(
-  "training/my_mqs/ideal.csv", "training/my_mqs/iterations"
-)
-comparison$summary
-```
-
-To request a proposed revision without overwriting the prompt, use
-`propose_prompt_revision()`. It consumes the current `prompt.md`, the item-level
-comparison and the audit/evidence files from the latest iteration. The proposal
-is returned for human review; no file is changed and no article is rerun:
-
-```r
-proposal <- propose_prompt_revision(
-  prompt_path = "training/my_mqs/scales/mqs/prompt.md",
-  comparison = comparison$comparison,
-  reason_files = list.files(
-    "training/my_mqs/iterations/iteration_1",
-    pattern = "_AuditLog\\.txt$", full.names = TRUE, recursive = TRUE
-  ),
-  provider = "gemini",
-  model = "gemini-3.5-flash-lite",
-  output_path = "training/my_mqs/scales/mqs/prompt_proposal.md"
-)
-cat(proposal$prompt)
-```
-
-With `output_path`, the proposal is written directly to `prompt_proposal.md`.
-The original prompt is never overwritten. Review the proposal manually before
-using it as the next local prompt version.
-
-Review item-level evidence and reasons before changing the local prompt. Keep
-each prompt snapshot and result directory; choose the version with the best
-item-level accuracy and the fewest systematic errors. Agreement with the
-training key is not external scientific validation.
-
-### Private scales in a local research project
-
-You can use a private scale without editing the installed package, opening a
-pull request, or publishing the prompt. Store the scale registry in a separate
-project directory and pass it through `registry_dir`:
-
-```text
-my-study/
-  scales/
-    my_scale/
-      prompt.md
-      metadata.json
-```
-
-The folder name is the scale name. The prompt and metadata must contain a
-matching `RUN_VERSION`/`prompt_version` pair, following the contract in
-`ADD_NEW_SCALE_SKILL.md`. The same external registry can be used with
-`available_scales()`, `resolve_prompt()`, `run_article()`, and `run_dataset()`:
-
-```r
-library(scaleLLMflow)
-
-my_registry <- "my-study/scales"
-
-available_scales(my_registry)
 resolve_prompt(
   scale = "my_scale",
-  model = "gemini-3.5-flash-lite",
-  provider = "gemini",
-  registry_dir = my_registry
+  model = "my_model",
+  provider = "my_provider",
+  registry_dir = "scales"
 )
 
+audit_model_registry(
+  registry_dir = "scales",
+  output_dir = "registry-audit"
+)
+```
+
+For the complete registry contract, see [ADD_NEW_SCALE_SKILL.md](ADD_NEW_SCALE_SKILL.md).
+
+## Response validation and evidence
+
+Registered scales use strict structured responses. Every required item must be present, its decision must be allowed by metadata, and its evidence and reason fields must be valid. Invalid or incomplete responses fail closed instead of silently becoming scores.
+
+The raw model response is preserved in the audit log. Human-readable evidence and reasons are exported to the consolidated evidence report for review and prompt development.
+
+## Execution modes
+
+### Free mode
+
+Free mode evaluates a document without assuming that a previous score is correct:
+
+```r
 result <- run_article(
-  article_path = "my-study/articles/article.pdf",
+  "path/to/article.pdf",
   scale = "my_scale",
-  provider = "gemini",
-  model = "gemini-3.5-flash-lite",
-  registry_dir = my_registry
+  provider = "my_provider",
+  model = "my_model",
+  validation_mode = "free"
 )
 ```
 
-Before running articles, validate the local registry:
+### Reference mode
+
+Reference mode compares item decisions with reviewed scores while preserving the raw response:
 
 ```r
-audit <- audit_model_registry(
-  registry_dir = my_registry,
-  output_dir = "my-study/registry-audit"
-)
-
-audit$checks
-subset(audit$checks, Status == "ERROR")
-```
-
-The audit checks the local file layout, metadata JSON, scale definition, total
-score contract, response schema, and duplicate prompts. It does not determine
-whether the scientific interpretation of a prompt is valid or whether a model
-produces accurate ratings. Those require pilot articles and, preferably,
-reference scores using `validation_mode = "reference"`.
-
-This workflow keeps the prompt, scale definition, articles, and results under
-the researcher's control. It does not make model execution local: the bundled
-providers still send article text to Gemini, OpenAI, or Claude. Fully local
-execution with Ollama, LM Studio, or another local model requires an additional
-provider integration.
-
-## Validation modes
-
-Free mode evaluates a document without reference scores:
-
-```r
-result <- run_article("path/to/article.pdf", validation_mode = "free")
-```
-
-Reference mode compares the model's item decisions with previously reviewed
-scores while preserving the raw response:
-
-```r
-reference <- c(Item_1 = 1, Item_2 = 0.5, Item_3 = 1, Item_4 = 1,
-               Item_5 = 1, Item_6 = 0, Item_7 = 1, Item_8 = 0.5,
-               Item_9 = 1, Item_10 = 1)
+reference <- c(Item_1 = 1, Item_2 = 0, Item_3 = 1)
 
 result <- run_article(
   "path/to/article.pdf",
+  scale = "my_scale",
+  provider = "my_provider",
+  model = "my_model",
   validation_mode = "reference",
   reference_scores = reference
 )
@@ -348,28 +211,68 @@ result <- run_article(
 result$validation
 ```
 
-For datasets, use `reference_csv` with an `ID` column and `Item_1` through
-`Item_n` columns.
+For datasets, use a semicolon-separated `reference_csv` with an `ID` column and the required item columns.
 
-## Outputs and reproducibility
+## Outputs
 
-Audit outputs record the requested and selected prompt, provider, model,
-generation settings, input sizes, and SHA-256 hashes for the extracted text,
-prompt, request, and raw response. This makes it possible to identify changes
-in source documents, prompts, or runtime configuration.
+Each dataset execution creates a directory such as:
 
-## Tests and package development
+```text
+results/
+  my_scale_YYYYMMDD_HHMMSS/
+    prompt_used.md
+    my_scale_Consensus_Report.csv
+    my_scale_Evidence_Report.csv
+    article_A_AuditLog.txt
+    article_B_AuditLog.txt
+    my_scale_Errors.csv       # only when errors occurred
+```
 
-Run the test suite from the package directory:
+The consensus report contains obtained item scores and calculated totals. The evidence report contains one row per document and item with `ID`, `Item`, `Score`, `Decision`, `Evidence`, and `Reason`. Errors are written only when at least one document fails. Direct `run_article()` calls can also write an individual evidence CSV.
+
+Audit metadata records the provider, model, prompt version, package and R versions, generation settings, retry settings, input sizes, and SHA-256 hashes for source text, prompt, request, and raw response.
+
+## Local scale development and prompt training
+
+Private scales can be developed without modifying the installed package:
+
+```text
+my-project/
+  scales/
+    my_scale/
+      prompt.md
+      metadata.json
+  articles/
+  results/
+```
+
+Pass `my-project/scales` through `registry_dir`. Keep prompt versions, metadata, article inputs, and result directories under version control where appropriate. Use reviewed scores and `validation_mode = "reference"` to compare iterations. Agreement with a supplied reference does not establish external scientific validity.
+
+Optional training helpers compare iterations and can propose a revised prompt for human review. They do not overwrite the current prompt or replace scientific review.
+
+## Bundled scales and examples
+
+The repository may include bundled scales and example directories to exercise the general framework. These are demonstrations, not API requirements or limitations. Consult the specific files under `examples/` for their selected provider, model, scale, articles, and reference data.
+
+## Tests and development
+
+Run the tests:
 
 ```powershell
 Rscript -e "testthat::test_dir('tests/testthat')"
 ```
 
-Build the source package with:
+Regenerate R help pages from roxygen comments in `R/*.R`:
+
+```r
+roxygen2::roxygenise(load_code = "source", clean = FALSE)
+```
+
+Build the source package:
 
 ```powershell
 R CMD build .
 ```
 
-Do not commit `.Renviron` or files containing real API keys.
+The full reference manual source is available in [help/scaleLLMflow.tex](help/scaleLLMflow.tex).
+
