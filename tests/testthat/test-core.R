@@ -22,13 +22,8 @@ test_that("429 retry hints are parsed and honored", {
   expect_equal(scaleLLMflow:::retry_after_seconds(header_error), 7)
 })
 
-test_that("Gemini resolves its billing project from the environment", {
-  old <- Sys.getenv("GOOGLE_CLOUD_PROJECT", unset = NA_character_)
-  on.exit({
-    if (is.na(old)) Sys.unsetenv("GOOGLE_CLOUD_PROJECT") else Sys.setenv(GOOGLE_CLOUD_PROJECT = old)
-  }, add = TRUE)
-  Sys.setenv(GOOGLE_CLOUD_PROJECT = "gen-lang-client-test")
-  expect_equal(scaleLLMflow:::resolve_gemini_project(), "gen-lang-client-test")
+test_that("Gemini does not require a billing project", {
+  expect_equal(scaleLLMflow:::resolve_gemini_project(), "")
   expect_equal(scaleLLMflow:::resolve_gemini_project("explicit-project"), "explicit-project")
 })
 
@@ -36,6 +31,22 @@ test_that("Gemini Lite is the default model across workflows", {
   expect_identical(formals(scaleLLMflow::run_llm)$model, "gemini-3.5-flash-lite")
   expect_identical(formals(scaleLLMflow::run_article)$model, "gemini-3.5-flash-lite")
   expect_identical(formals(scaleLLMflow::run_dataset)$model, "gemini-3.5-flash-lite")
+})
+
+test_that("Mistral is a supported provider with the pinned Small 4 model", {
+  expect_equal(scaleLLMflow:::provider_alias("mistral"), "mistral")
+  expect_equal(scaleLLMflow:::provider_model_env("mistral"), "MISTRAL_API_KEY")
+  old <- Sys.getenv("MISTRAL_API_KEY", unset = NA_character_)
+  on.exit({
+    if (is.na(old)) Sys.unsetenv("MISTRAL_API_KEY") else Sys.setenv(MISTRAL_API_KEY = old)
+  }, add = TRUE)
+  Sys.unsetenv("MISTRAL_API_KEY")
+  expect_error(scaleLLMflow:::get_required_env("MISTRAL_API_KEY"), "Missing API key")
+})
+
+test_that("Ollama is a local provider without an API key", {
+  expect_equal(scaleLLMflow:::provider_alias("local"), "ollama")
+  expect_length(scaleLLMflow:::provider_model_env("ollama"), 0)
 })
 
 test_that("RoB 2 v007 applies calibration and textual-value safeguards", {
