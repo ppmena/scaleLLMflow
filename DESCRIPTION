@@ -19,6 +19,7 @@ Imports:
     httr2,
     jsonlite,
     openssl,
+    png,
     pdftools,
     stringr
 Suggests:

@@ -151,6 +151,66 @@ split_article_text_chunks <- function(article_text, max_chars = 50000) {
   chunks
 }
 
+detect_figure_pages <- function(page_texts) {
+  if (!length(page_texts)) return(integer(0))
+  hits <- grepl(
+    "(?i)\\b(?:fig(?:ure)?|flow[- ]?chart|diagram|graph|plot|scheme)\\s*(?:[0-9]+|[A-Z])?",
+    page_texts, perl = TRUE
+  )
+  which(hits)
+}
+
+pdf_page_image_payload <- function(pdf_path, page, dpi = 144) {
+  rendered <- pdftools::pdf_render_page(pdf_path, page = page, dpi = dpi)
+  image_path <- tempfile("scaleLLMflow-figure-", fileext = ".png")
+  on.exit(unlink(image_path), add = TRUE)
+  png::writePNG(rendered, target = image_path)
+  bytes <- readBin(image_path, what = "raw", n = file.info(image_path)$size)
+  list(mime_type = "image/png", data = openssl::base64_encode(bytes))
+}
+
+figure_conversion_prompt <- function(page_numbers) {
+  paste(
+    "Inspect the attached PDF page images and transcribe only the information",
+    "contained in figures, graphs, diagrams, flow charts, plots, or schematics.",
+    "For each visible figure, preserve its number, title, labels, legends, axis",
+    "names and values, sample sizes, annotations, arrows, relationships and",
+    "trends. Include textual content embedded inside the image even when it is",
+    "not present in the PDF text layer. Do not guess unreadable values and do not",
+    "summarize. Return Markdown only, with a heading for each figure and the PDF",
+    "page number in the heading. The supplied pages are:",
+    paste(page_numbers, collapse = ", "),
+    sep = " "
+  )
+}
+
+extract_pdf_figures_llm <- function(pdf_path, page_texts, provider, model,
+                                    temperature = 0, figure_dpi = 144,
+                                    figure_page_batch_size = 3, ...) {
+  pages <- detect_figure_pages(page_texts)
+  if (!length(pages)) return("")
+  if (!identical(provider_alias(provider), "gemini")) {
+    warning("Figure-aware conversion requires provider = 'gemini'; figure pages were skipped.", call. = FALSE)
+    return("")
+  }
+  if (!is.numeric(figure_page_batch_size) || length(figure_page_batch_size) != 1 ||
+      figure_page_batch_size < 1 || figure_page_batch_size != as.integer(figure_page_batch_size)) {
+    stop("figure_page_batch_size must be a positive integer.", call. = FALSE)
+  }
+  page_batches <- split(pages, ceiling(seq_along(pages) / as.integer(figure_page_batch_size)))
+  results <- vapply(page_batches, function(batch) {
+    images <- lapply(batch, function(page) pdf_page_image_payload(pdf_path, page, dpi = figure_dpi))
+    prompt <- figure_conversion_prompt(batch)
+    result <- do.call(run_llm_multimodal, c(
+      list(prompt = prompt, images = images, provider = provider, model = model,
+           temperature = temperature), list(...)
+    ))
+    result <- sub("^```(?:markdown|md)?\\s*", "", result, ignore.case = TRUE)
+    sub("\\s*```$", "", result)
+  }, character(1))
+  paste(results[nzchar(trimws(results))], collapse = "\n\n")
+}
+
 #' Extract text from a PDF article.
 #'
 #' @param pdf_path Path to a PDF article.
@@ -159,6 +219,11 @@ split_article_text_chunks <- function(article_text, max_chars = 50000) {
 #' @param cache_markdown Whether to cache PDF conversion beside the source PDF.
 #' @param conversion PDF conversion mode: `"basic"` or `"llm"`. LLM conversion
 #' usually produces better reading order and Markdown structure for multi-column articles.
+#' @param figures_advanced Whether LLM conversion should render likely figure
+#'   pages and transcribe visible figure content. Gemini is currently required;
+#'   other providers keep the text conversion and emit a warning.
+#' @param figure_dpi Rendering resolution used for figure pages.
+#' @param figure_page_batch_size Number of figure pages sent per multimodal call.
 #' @param provider,model,conversion_prompt,temperature LLM conversion settings.
 #' @param max_chars Maximum extracted-text size per LLM conversion call. Larger
 #' PDFs are split into line-safe chunks and reassembled into one Markdown file.
@@ -167,12 +232,14 @@ extract_pdf_text <- function(pdf_path, strip_references = TRUE, tables_advanced 
                              cache_markdown = TRUE, conversion = "basic",
                              provider = "openai", model = "gpt-5.6-luna",
                              conversion_prompt = NULL, temperature = 0,
-                             max_chars = 50000, ...) {
+                             max_chars = 50000, figures_advanced = TRUE,
+                             figure_dpi = 144, figure_page_batch_size = 3, ...) {
   if (!file.exists(pdf_path)) {
     stop("PDF not found: ", pdf_path, call. = FALSE)
   }
 
-  article_text <- paste(pdftools::pdf_text(pdf_path), collapse = "\n")
+  page_texts <- pdftools::pdf_text(pdf_path)
+  article_text <- paste(page_texts, collapse = "\n")
   if (isTRUE(strip_references)) {
     article_text <- strip_references_section(article_text)
   }
@@ -180,10 +247,18 @@ extract_pdf_text <- function(pdf_path, strip_references = TRUE, tables_advanced 
   conversion <- match.arg(conversion, c("basic", "llm"))
   markdown_text <- if (conversion == "llm") {
     chunks <- split_article_text_chunks(article_text, max_chars = max_chars)
-    paste(vapply(chunks, function(chunk) convert_article_markdown_llm(
+    text_markdown <- paste(vapply(chunks, function(chunk) convert_article_markdown_llm(
       chunk, provider = provider, model = model, temperature = temperature,
       prompt = conversion_prompt, max_chars = max_chars, ...), character(1)),
       collapse = "\n\n")
+    figure_markdown <- if (isTRUE(figures_advanced)) {
+      extract_pdf_figures_llm(
+        pdf_path, page_texts = page_texts, provider = provider, model = model,
+        temperature = temperature, figure_dpi = figure_dpi,
+        figure_page_batch_size = figure_page_batch_size, ...
+      )
+    } else ""
+    if (nzchar(figure_markdown)) paste(text_markdown, figure_markdown, sep = "\n\n") else text_markdown
   } else structure_article_markdown(article_text, tables_advanced = tables_advanced)
   if (isTRUE(cache_markdown)) {
     md_path <- file.path(dirname(pdf_path), paste0(tools::file_path_sans_ext(basename(pdf_path)), ".md"))
@@ -198,6 +273,8 @@ extract_pdf_text <- function(pdf_path, strip_references = TRUE, tables_advanced 
 #' @param filetype One of `"auto"`, `"pdf"`, `"txt"`, or `"md"`.
 #' @param strip_references Whether to remove the reference section before sending text to an LLM.
 #' @param conversion PDF conversion mode passed to `extract_pdf_text()`.
+#' @param figures_advanced,figure_dpi,figure_page_batch_size Figure-aware LLM
+#'   conversion settings passed to `extract_pdf_text()`.
 #' @param provider,model,conversion_prompt,temperature LLM conversion settings.
 #' @param max_chars Maximum text size per LLM conversion call.
 #' @details Files are read from the local filesystem. PDF, TXT, and Markdown
@@ -207,7 +284,9 @@ extract_article_text <- function(file_path, filetype = "auto", strip_references 
                                  tables_advanced = TRUE, cache_markdown = TRUE,
                                  conversion = "basic", provider = "gemini",
                                  model = "gemini-3.5-flash-lite", conversion_prompt = NULL,
-                                 temperature = 0, max_chars = 50000, ...) {
+                                 temperature = 0, max_chars = 50000,
+                                 figures_advanced = TRUE, figure_dpi = 144,
+                                 figure_page_batch_size = 3, ...) {
   if (!file.exists(file_path)) {
     stop("Article file not found: ", file_path, call. = FALSE)
   }
@@ -225,7 +304,8 @@ extract_article_text <- function(file_path, filetype = "auto", strip_references 
       tables_advanced = tables_advanced, cache_markdown = cache_markdown,
       conversion = conversion, provider = provider, model = model,
       conversion_prompt = conversion_prompt, temperature = temperature,
-      max_chars = max_chars, ...))
+      max_chars = max_chars, figures_advanced = figures_advanced,
+      figure_dpi = figure_dpi, figure_page_batch_size = figure_page_batch_size, ...))
   }
 
   article_text <- paste(readLines(file_path, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
