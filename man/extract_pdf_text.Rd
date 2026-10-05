@@ -15,6 +15,9 @@ extract_pdf_text(
   conversion_prompt = NULL,
   temperature = 0,
   max_chars = 50000,
+  figures_advanced = TRUE,
+  figure_dpi = 144,
+  figure_page_batch_size = 3,
   ...
 )
 }
@@ -34,6 +37,14 @@ usually produces better reading order and Markdown structure for multi-column ar
 
 \item{max_chars}{Maximum extracted-text size per LLM conversion call. Larger
 PDFs are split into line-safe chunks and reassembled into one Markdown file.}
+
+\item{figures_advanced}{Whether LLM conversion should render likely figure
+pages and transcribe visible figure content. Gemini is currently required;
+other providers keep the text conversion and emit a warning.}
+
+\item{figure_dpi}{Rendering resolution used for figure pages.}
+
+\item{figure_page_batch_size}{Number of figure pages sent per multimodal call.}
 }
 \description{
 Extract text from a PDF article.

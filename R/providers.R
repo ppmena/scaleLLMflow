@@ -192,6 +192,75 @@ call_gemini <- function(prompt, model, temperature = 0, top_p = 0.1, timeout = 3
   result
 }
 
+call_gemini_multimodal <- function(prompt, images, model, temperature = 0,
+                                   timeout = 300, api_key = NULL,
+                                   project_id = NULL) {
+  if (is.null(api_key) || !nzchar(api_key)) {
+    api_key <- get_required_env(c("GEMINI_API_KEY", "GOOGLE_GEMINI_KEY"))
+  }
+  project_id <- resolve_gemini_project(project_id)
+  if (!is.list(images) || !length(images)) {
+    stop("images must be a non-empty list of image payloads.", call. = FALSE)
+  }
+
+  image_parts <- lapply(images, function(image) {
+    if (!is.list(image) || !nzchar(as.character(image$mime_type %||% "")) ||
+        !nzchar(as.character(image$data %||% ""))) {
+      stop("Each image must contain non-empty mime_type and data fields.", call. = FALSE)
+    }
+    list(inline_data = list(
+      mime_type = as.character(image$mime_type),
+      data = as.character(image$data)
+    ))
+  })
+  body <- list(
+    contents = list(list(parts = c(list(list(text = prompt)), image_parts))),
+    generationConfig = list(temperature = temperature)
+  )
+  endpoint <- paste0(
+    "https://generativelanguage.googleapis.com/v1beta/models/",
+    utils::URLencode(model, reserved = TRUE), ":generateContent"
+  )
+  req <- httr2::request(endpoint) |>
+    httr2::req_headers(`x-goog-api-key` = api_key)
+  if (nzchar(project_id)) {
+    req <- httr2::req_headers(req, `x-goog-user-project` = project_id)
+  }
+  resp <- req |>
+    httr2::req_body_json(body, auto_unbox = TRUE) |>
+    httr2::req_options(timeout = timeout) |>
+    httr2::req_perform()
+  parsed <- httr2::resp_body_json(resp, simplifyVector = FALSE)
+  text <- unlist(lapply(parsed$candidates %||% list(), function(candidate) {
+    unlist(lapply(candidate$content$parts %||% list(), function(part) {
+      as.character(part$text %||% "")
+    }), use.names = FALSE)
+  }), use.names = FALSE)
+  result <- paste(text[nzchar(text)], collapse = "\n")
+  if (!nzchar(result)) {
+    stop("Gemini multimodal response did not contain readable output text.", call. = FALSE)
+  }
+  result
+}
+
+run_llm_multimodal <- function(prompt, images, provider = "gemini",
+                               model = "gemini-3.5-flash-lite", temperature = 0,
+                               timeout = 300, api_key = NULL, project_id = NULL,
+                               max_retries = 3, retry_wait_seconds = 1,
+                               retry_backoff = 2, rate_limit_seconds = 0, ...) {
+  provider <- provider_alias(provider)
+  if (!identical(provider, "gemini")) {
+    stop("Figure-aware conversion currently requires provider = 'gemini'.", call. = FALSE)
+  }
+  with_retries(
+    function() call_gemini_multimodal(
+      prompt, images = images, model = model, temperature = temperature,
+      timeout = timeout, api_key = api_key, project_id = project_id
+    ), provider, model, max_retries, retry_wait_seconds, retry_backoff,
+    rate_limit_seconds
+  )
+}
+
 call_openai <- function(prompt, model, temperature = 0, timeout = 300, api_key = NULL,
                         project_id = NULL, response_schema = NULL, reasoning_effort = NULL) {
   if (is.null(api_key) || !nzchar(api_key)) {

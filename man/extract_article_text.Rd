@@ -16,6 +16,9 @@ extract_article_text(
   conversion_prompt = NULL,
   temperature = 0,
   max_chars = 50000,
+  figures_advanced = TRUE,
+  figure_dpi = 144,
+  figure_page_batch_size = 3,
   ...
 )
 }
@@ -31,6 +34,9 @@ extract_article_text(
 \item{provider, model, conversion_prompt, temperature}{LLM conversion settings.}
 
 \item{max_chars}{Maximum text size per LLM conversion call.}
+
+\item{figures_advanced, figure_dpi, figure_page_batch_size}{Figure-aware LLM
+conversion settings passed to \code{extract_pdf_text()}.}
 }
 \description{
 Extract text from a supported article file.
