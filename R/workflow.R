@@ -175,6 +175,12 @@ run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini",
   if (is.null(article_path)) {
     article_path <- pdf_path
   }
+  if (identical(provider_alias(provider), "chatgpt_plan") &&
+      (is.null(model) || identical(model, "gemini-3.5-flash-lite"))) {
+    available <- chatgpt_plan_models()
+    if (!nrow(available)) stop("No ChatGPT plan model is available. Run chatgpt_plan_login() first.", call. = FALSE)
+    model <- available$model[[1]]
+  }
   if (is.null(article_path)) {
     stop("article_path is required.", call. = FALSE)
   }
@@ -326,6 +332,12 @@ run_dataset <- function(articles_dir, scale = "mqs", provider = "gemini", model 
                         validation_mode = c("free", "reference")) {
   if (!dir.exists(articles_dir)) {
     stop("Articles directory not found: ", articles_dir, call. = FALSE)
+  }
+  if (identical(provider_alias(provider), "chatgpt_plan") &&
+      (is.null(model) || identical(model, "gemini-3.5-flash-lite"))) {
+    available <- chatgpt_plan_models()
+    if (!nrow(available)) stop("No ChatGPT plan model is available. Run chatgpt_plan_login() first.", call. = FALSE)
+    model <- available$model[[1]]
   }
   items <- scale_default_items(scale, items)
   validation_mode <- match.arg(validation_mode)

@@ -4,6 +4,7 @@ provider_model_env <- function(provider) {
     openai = "OPENAI_API_KEY",
     claude = c("ANTHROPIC_API_KEY", "CLAUDE_API_KEY"),
     mistral = "MISTRAL_API_KEY",
+    chatgpt_plan = character(0),
     ollama = character(0),
     character(0)
   )
@@ -21,7 +22,7 @@ provider_model_env <- function(provider) {
 available_provider_models <- function(provider, api_key = NULL, timeout = 30,
                                       supported_only = TRUE) {
   provider <- provider_alias(provider)
-  if (!provider %in% c("gemini", "openai", "claude", "mistral", "ollama")) {
+  if (!provider %in% c("gemini", "openai", "claude", "mistral", "chatgpt_plan", "ollama")) {
     stop("Unsupported provider: ", provider, call. = FALSE)
   }
   env_names <- provider_model_env(provider)
@@ -64,6 +65,8 @@ available_provider_models <- function(provider, api_key = NULL, timeout = 30,
     rows <- httr2::resp_body_json(resp, simplifyVector = FALSE)$models %||% list()
     return(model_rows(provider, rows, "name", "name"))
   }
+
+  if (provider == "chatgpt_plan") return(chatgpt_plan_models(timeout = timeout))
 
   endpoint <- "https://generativelanguage.googleapis.com/v1beta/models"
   page <- NULL

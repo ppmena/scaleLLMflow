@@ -1,0 +1,7 @@
+{
+  "name": "scalellmflow-chatgpt-plan-bridge",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "dependencies": { "jose": "^6.1.0" }
+}

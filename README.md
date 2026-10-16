@@ -42,12 +42,17 @@ Credentials belong to the user and are never stored by the package. They may be 
 | Provider | Environment variables |
 | --- | --- |
 | Gemini | `GEMINI_API_KEY` or `GOOGLE_GEMINI_KEY` |
-| OpenAI | `OPENAI_API_KEY`; optionally `OPENAI_PROJECT_ID` |
+| OpenAI API | `OPENAI_API_KEY`; optionally `OPENAI_PROJECT_ID` |
+| ChatGPT plan | OAuth sign-in with `chatgpt_plan_login()`; no API key |
 | Claude | `ANTHROPIC_API_KEY` or `CLAUDE_API_KEY` |
 | Mistral | `MISTRAL_API_KEY` |
 | Ollama | No key; optionally `OLLAMA_BASE_URL` |
 
 Do not commit `.Renviron` or files containing credentials.
+
+The optional `chatgpt_plan` provider uses the local Sign in with ChatGPT flow.
+It requires Node.js 22 or newer and the one-time setup in
+[chatgpt_plan.md](help/chatgpt_plan.md).
 
 ## General workflow
 
