@@ -12,7 +12,7 @@ available_provider_models(
 )
 }
 \arguments{
-\item{provider}{\code{"gemini"}, \code{"openai"}, \code{"claude"}, or an alias.}
+\item{provider}{\code{"gemini"}, \code{"openai"}, \code{"claude"}, \code{"mistral"}, \code{"ollama"}, or an alias.}
 
 \item{api_key}{Optional in-memory API key. Otherwise the provider's usual
 environment variables are used.}

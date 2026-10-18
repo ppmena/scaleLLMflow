@@ -99,6 +99,7 @@ structure_article_markdown <- function(article_text, tables_advanced = TRUE) {
 #' @param model Provider model.
 #' @param temperature Sampling temperature.
 #' @param prompt Optional local conversion prompt.
+#' @param max_chars Maximum text size per conversion call.
 #' @param ... Additional provider call settings.
 #' @export
 convert_article_markdown_llm <- function(article_text, provider = "openai",
@@ -227,6 +228,7 @@ extract_pdf_figures_llm <- function(pdf_path, page_texts, provider, model,
 #' @param provider,model,conversion_prompt,temperature LLM conversion settings.
 #' @param max_chars Maximum extracted-text size per LLM conversion call. Larger
 #' PDFs are split into line-safe chunks and reassembled into one Markdown file.
+#' @param ... Additional provider call settings.
 #' @export
 extract_pdf_text <- function(pdf_path, strip_references = TRUE, tables_advanced = TRUE,
                              cache_markdown = TRUE, conversion = "basic",
@@ -289,6 +291,9 @@ extract_pdf_text <- function(pdf_path, strip_references = TRUE, tables_advanced 
 #'   conversion settings passed to `extract_pdf_text()`.
 #' @param provider,model,conversion_prompt,temperature LLM conversion settings.
 #' @param max_chars Maximum text size per LLM conversion call.
+#' @param tables_advanced,cache_markdown Whether to structure text and cache PDF
+#'   conversion output.
+#' @param ... Additional provider call settings.
 #' @details Files are read from the local filesystem. PDF, TXT, and Markdown
 #' inputs are supported.
 #' @export

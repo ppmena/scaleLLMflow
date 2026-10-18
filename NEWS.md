@@ -1,5 +1,20 @@
 # scaleLLMflow (unreleased)
 
+# scaleLLMflow 0.4.3
+
+## Stabilization and documentation
+
+- Moved prompt resolution, article discovery, and identifier-collision checks
+  ahead of dataset output creation, so invalid runs do not leave partial output
+  directories.
+- Reused one validated structured response throughout single-article scoring,
+  evidence extraction, and reference comparison.
+- Normalized bundled article filenames to portable ASCII-compatible names.
+- Added package-build exclusions for local caches, generated reports, and
+  development-only files.
+- Expanded the user documentation, Spanish getting-started guide, examples,
+  troubleshooting notes, and release verification report.
+
 ## Auditoría y robustez
 
 - Corregido el ejemplo de descubrimiento de modelos del README.

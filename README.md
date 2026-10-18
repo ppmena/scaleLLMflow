@@ -24,7 +24,7 @@ From a local checkout:
 
 ```powershell
 R CMD build .
-R CMD INSTALL scaleLLMflow_0.4.2.tar.gz
+R CMD INSTALL scaleLLMflow_0.4.3.tar.gz
 ```
 
 For development in RStudio:
@@ -260,6 +260,10 @@ Optional training helpers compare iterations and can propose a revised prompt fo
 The repository may include bundled scales and example directories to exercise the general framework. These are demonstrations, not API requirements or limitations. Consult the specific files under `examples/` for their selected provider, model, scale, articles, and reference data.
 
 ## Tests and development
+
+The maintained documentation is organized in [`docs/index.md`](docs/index.md).
+Start with the [English getting-started guide](docs/getting-started.md) or the
+[Spanish getting-started guide](docs/getting-started-es.md).
 
 Run the tests:
 

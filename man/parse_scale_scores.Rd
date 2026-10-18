@@ -4,7 +4,12 @@
 \alias{parse_scale_scores}
 \title{Parse scale item scores from an LLM response.}
 \usage{
-parse_scale_scores(text, items = 1:10, metadata = NULL)
+parse_scale_scores(
+  text,
+  items = 1:10,
+  metadata = NULL,
+  validated_response = NULL
+)
 }
 \arguments{
 \item{text}{LLM response text.}
@@ -12,6 +17,10 @@ parse_scale_scores(text, items = 1:10, metadata = NULL)
 \item{items}{Numeric item ids to parse. Defaults to 1:10.}
 
 \item{metadata}{Optional resolved scale metadata.}
+
+\item{validated_response}{Optional response already returned by
+\code{validate_scale_response()}. This avoids validating the same structured
+response more than once in a workflow.}
 }
 \description{
 Parse scale item scores from an LLM response.

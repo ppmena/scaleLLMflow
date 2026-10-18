@@ -45,6 +45,8 @@ other providers keep the text conversion and emit a warning.}
 \item{figure_dpi}{Rendering resolution used for figure pages.}
 
 \item{figure_page_batch_size}{Number of figure pages sent per multimodal call.}
+
+\item{...}{Additional provider call settings.}
 }
 \description{
 Extract text from a PDF article.

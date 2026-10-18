@@ -54,7 +54,7 @@ source and licence for the bundled PDFs.
 | 04 | `swedish_mi_dissemination.pdf` | Beckman et al. (2017), *The dissemination of motivational interviewing in Swedish county councils* | CC BY 4.0; [PLOS ONE](https://doi.org/10.1371/journal.pone.0181715) |
 | 05 | `comon_coaching_oncology.pdf` | de Figueiredo et al. (2018), *ComOn-Coaching* | CC BY 4.0; [PLOS ONE](https://doi.org/10.1371/journal.pone.0205315) |
 | 06 | `nurses_mi_training.pdf` | Persson et al. (2016), *Proficiency in Motivational Interviewing among Nurses in Child Health Services* | CC BY 4.0; [PLOS ONE](https://doi.org/10.1371/journal.pone.0163624) |
-| 07 | `2004 Miller.pdf`, `2005 Scholomskas.pdf`, `2007 Moyers.pdf` | MQS prompt-training articles | Training fixtures included for the reproducible example; review their source and reuse conditions before redistribution. |
+| 07 | `2004_Miller.pdf`, `2005_Scholomskas.pdf`, `2007_Moyers.pdf` | MQS prompt-training articles | Training fixtures included for the reproducible example; review their source and reuse conditions before redistribution. |
 
 The `ideal_results.csv` files in examples 03 and 05 are demonstration fixtures.
 They should be replaced with human-validated scores before using those
