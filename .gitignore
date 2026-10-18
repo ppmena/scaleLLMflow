@@ -6,9 +6,11 @@
 .Renviron
 resultados/
 developer/
+local-assets/
 training/
 tmp/
 scaleLLMflow.Rcheck/
+node_modules/
 .Rd2pdf*/
 .RData
 .Rhistory

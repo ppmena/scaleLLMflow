@@ -49,6 +49,11 @@ test_that("Ollama is a local provider without an API key", {
   expect_length(scaleLLMflow:::provider_model_env("ollama"), 0)
 })
 
+test_that("ChatGPT plan is a local OAuth provider without an API key", {
+  expect_equal(scaleLLMflow:::provider_alias("chatgpt-plan"), "chatgpt_plan")
+  expect_equal(scaleLLMflow:::provider_model_env("chatgpt_plan"), character(0))
+})
+
 test_that("RoB 2 v007 applies calibration and textual-value safeguards", {
   resolved <- scaleLLMflow:::resolve_prompt("rob2", "gpt-5.6-luna", provider = "openai")
   prompt <- paste(readLines(resolved$prompt_path, warn = FALSE, encoding = "UTF-8"), collapse = "\n")

@@ -1,5 +1,8 @@
 provider_alias <- function(provider) {
   provider <- tolower(provider)
+  if (provider %in% c("chatgpt_plan", "chatgpt-plan", "chatgpt_account")) {
+    return("chatgpt_plan")
+  }
   if (provider == "chatgpt") {
     return("openai")
   }
@@ -13,6 +16,106 @@ provider_alias <- function(provider) {
     return("ollama")
   }
   provider
+}
+
+chatgpt_plan_bridge_dir <- function() {
+  configured <- Sys.getenv("SCALELLMFLOW_CHATGPT_DIR", unset = "")
+  if (nzchar(configured)) return(normalizePath(configured, mustWork = FALSE))
+  file.path(path.expand("~"), ".scaleLLMflow", "chatgpt-plan")
+}
+
+chatgpt_plan_packaged_file <- function(name) {
+  packaged <- system.file("chatgpt_plan", name, package = "scaleLLMflow")
+  if (nzchar(packaged)) return(normalizePath(packaged, mustWork = FALSE))
+  candidates <- c(
+    file.path("inst", "chatgpt_plan", name),
+    file.path("scaleLLMflow", "inst", "chatgpt_plan", name)
+  )
+  hit <- candidates[file.exists(candidates)]
+  if (length(hit)) normalizePath(hit[[1]], mustWork = FALSE) else ""
+}
+
+chatgpt_plan_runner_path <- function() {
+  configured <- Sys.getenv("SCALELLMFLOW_CHATGPT_RUNNER", unset = "")
+  if (nzchar(configured)) return(normalizePath(configured, mustWork = FALSE))
+  cached <- file.path(chatgpt_plan_bridge_dir(), "runner.mjs")
+  if (file.exists(cached)) return(normalizePath(cached, mustWork = FALSE))
+  packaged <- chatgpt_plan_packaged_file("runner.mjs")
+  packaged_node_modules <- file.path(dirname(packaged), "node_modules", "jose")
+  if (nzchar(packaged) && dir.exists(packaged_node_modules)) return(packaged)
+  stop("ChatGPT plan bridge is not installed. Run chatgpt_plan_install() first.", call. = FALSE)
+}
+
+#' Install the local ChatGPT plan bridge.
+#'
+#' @param timeout Maximum installation time in seconds.
+#' @export
+chatgpt_plan_install <- function(timeout = 300) {
+  bridge <- chatgpt_plan_bridge_dir()
+  dir.create(bridge, recursive = TRUE, showWarnings = FALSE)
+  packaged_runner <- chatgpt_plan_packaged_file("runner.mjs")
+  packaged_package <- chatgpt_plan_packaged_file("package.json")
+  if (!file.exists(packaged_runner) || !file.exists(packaged_package)) {
+    stop("ChatGPT plan bridge files are not available in this package.", call. = FALSE)
+  }
+  file.copy(packaged_runner, file.path(bridge, "runner.mjs"), overwrite = TRUE)
+  file.copy(packaged_package, file.path(bridge, "package.json"), overwrite = TRUE)
+  npm <- Sys.getenv("SCALELLMFLOW_NPM", unset = if (.Platform$OS.type == "windows") "npm.cmd" else "npm")
+  old <- getwd(); on.exit(setwd(old), add = TRUE); setwd(bridge)
+  output <- system2(npm, c("install", "--omit=dev"), stdout = TRUE, stderr = TRUE, timeout = timeout)
+  invisible(list(directory = bridge, output = output))
+}
+
+chatgpt_plan_bridge_call <- function(command, payload = list(), timeout = 300) {
+  node <- Sys.getenv("SCALELLMFLOW_NODE", unset = "node")
+  runner <- chatgpt_plan_runner_path()
+  if (!file.exists(runner)) stop("ChatGPT plan bridge not found: ", runner, call. = FALSE)
+  input <- jsonlite::toJSON(payload, auto_unbox = TRUE, null = "null", digits = NA)
+  input_path <- tempfile("scalellmflow-chatgpt-", fileext = ".json")
+  writeLines(input, input_path, useBytes = TRUE)
+  on.exit(unlink(input_path), add = TRUE)
+  output <- tryCatch(
+    system2(node, c(shQuote(runner), shQuote(command), shQuote(input_path)), stdout = TRUE, stderr = TRUE, timeout = timeout),
+    error = function(e) stop("Could not start the ChatGPT plan bridge: ", conditionMessage(e), call. = FALSE)
+  )
+  output <- output[nzchar(trimws(output))]
+  if (!length(output)) stop("ChatGPT plan bridge returned no response.", call. = FALSE)
+  parsed <- tryCatch(jsonlite::fromJSON(tail(output, 1), simplifyVector = FALSE),
+    error = function(e) stop("Invalid response from ChatGPT plan bridge: ", paste(output, collapse = "\n"), call. = FALSE))
+  if (isTRUE(parsed$error)) stop(as.character(parsed$message %||% "ChatGPT plan request failed."), call. = FALSE)
+  parsed
+}
+
+#' Connect the local package to a ChatGPT account through OAuth.
+#'
+#' @param label Label for the local connection.
+#' @export
+chatgpt_plan_login <- function(label = "scaleLLMflow") {
+  chatgpt_plan_bridge_call("login", list(label = label))
+}
+
+#' Disconnect the local ChatGPT plan connection.
+#' @export
+chatgpt_plan_logout <- function() chatgpt_plan_bridge_call("logout")
+
+#' Return the local ChatGPT plan connection status.
+#' @export
+chatgpt_plan_status <- function() chatgpt_plan_bridge_call("status")
+
+#' List models available to the connected ChatGPT plan.
+#'
+#' @param timeout Maximum request time in seconds.
+#' @export
+chatgpt_plan_models <- function(timeout = 60) {
+  result <- chatgpt_plan_bridge_call("models", timeout = timeout)
+  rows <- result$models %||% list()
+  if (!length(rows)) return(data.frame(provider = character(), model = character(), display_name = character()))
+  data.frame(
+    provider = "chatgpt_plan",
+    model = vapply(rows, function(x) as.character(x$slug %||% x$model %||% ""), character(1)),
+    display_name = vapply(rows, function(x) as.character(x$name %||% x$display_name %||% x$slug %||% ""), character(1)),
+    stringsAsFactors = FALSE
+  )
 }
 
 get_required_env <- function(names) {
@@ -327,6 +430,22 @@ call_openai <- function(prompt, model, temperature = 0, timeout = 300, api_key =
   result
 }
 
+call_chatgpt_plan <- function(prompt, model, temperature = 0, timeout = 300,
+                              response_schema = NULL, reasoning_effort = NULL) {
+  if (is.null(model) || !nzchar(model)) {
+    models <- chatgpt_plan_models(timeout = min(timeout, 60))
+    if (!nrow(models)) stop("No ChatGPT plan model is available. Run chatgpt_plan_login() first.", call. = FALSE)
+    model <- models$model[[1]]
+  }
+  result <- chatgpt_plan_bridge_call("run", list(
+    model = model, input = prompt, temperature = temperature,
+    reasoning_effort = reasoning_effort, response_schema = response_schema
+  ), timeout = timeout)
+  text <- as.character(result$text %||% "")
+  if (!nzchar(text)) stop("ChatGPT plan response did not contain readable output text.", call. = FALSE)
+  text
+}
+
 call_claude <- function(prompt, model, temperature = 0, timeout = 300,
                         api_key = NULL, response_schema = NULL) {
   if (is.null(api_key) || !nzchar(api_key)) {
@@ -471,6 +590,11 @@ run_llm <- function(prompt, provider = "gemini", model = "gemini-3.5-flash-lite"
     }
     return(with_retries(function() call_openai(prompt, model, temperature, timeout, api_key, project_id, response_schema, reasoning_effort),
       provider, model, max_retries, retry_wait_seconds, retry_backoff, rate_limit_seconds))
+  }
+
+  if (provider == "chatgpt_plan") {
+    return(with_retries(function() call_chatgpt_plan(prompt, model, temperature, timeout, response_schema, reasoning_effort),
+      provider, model %||% "auto", max_retries, retry_wait_seconds, retry_backoff, rate_limit_seconds))
   }
 
   if (provider == "claude") {
