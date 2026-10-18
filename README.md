@@ -69,7 +69,7 @@ The following examples deliberately use placeholders rather than a particular sc
 library(scaleLLMflow)
 
 available_scales()
-available_models(scale = "my_scale")
+available_provider_models("my_provider")
 
 one_result <- run_article(
   article_path = "path/to/article.pdf",
@@ -173,7 +173,7 @@ audit_model_registry(
 )
 ```
 
-For the complete registry contract, see [ADD_NEW_SCALE_SKILL.md](ADD_NEW_SCALE_SKILL.md).
+For the complete registry contract, see [help/add_new_scale_skill.md](help/add_new_scale_skill.md).
 
 ## Response validation and evidence
 

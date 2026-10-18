@@ -152,6 +152,28 @@ parse_strict_json <- function(text) {
   parsed
 }
 
+json_item_key_counts <- function(text, expected_keys) {
+  normalized <- trimws(text)
+  if (grepl("^```(?:json)?\\s*", normalized, perl = TRUE, ignore.case = TRUE) &&
+      grepl("```\\s*$", normalized, perl = TRUE)) {
+    normalized <- sub("^```(?:json)?\\s*", "", normalized, perl = TRUE, ignore.case = TRUE)
+    normalized <- sub("```\\s*$", "", normalized, perl = TRUE)
+  }
+  hit <- regexpr('"items"\\s*:\\s*\\{', normalized, perl = TRUE)
+  if (hit[[1]] < 0) return(integer())
+  start <- hit[[1]] + attr(hit, "match.length")
+  tail_text <- substr(normalized, start, nchar(normalized))
+  # The item object is the outermost object after the items key. JSON item
+  # values are objects in the registered contract, so this captures only the
+  # item-key region and not nested evidence/reason fields.
+  end <- regexpr("\\}\\s*\\}", tail_text, perl = TRUE)
+  if (end[[1]] < 0) return(integer())
+  item_text <- substr(tail_text, 1, end[[1]] - 1L)
+  keys <- stringr::str_match_all(item_text, '"([^"\\\\]+)"\\s*:')[[1]]
+  if (nrow(keys) == 0) return(integer())
+  table(keys[keys[, 2] %in% expected_keys, 2])
+}
+
 # Validate the scale-specific response contract declared in metadata.json.
 # The validator deliberately fails closed: malformed or incomplete ratings
 # must be retried/reviewed instead of silently becoming missing scores.
@@ -185,6 +207,15 @@ validate_scale_response <- function(text, metadata, items) {
   missing <- setdiff(required, names(response$items))
   if (length(missing) > 0) {
     stop("Response is missing required item(s): ", paste(missing, collapse = ", "), call. = FALSE)
+  }
+  extra <- setdiff(names(response$items), required)
+  if (length(extra) > 0) {
+    stop("Response contains undefined item(s): ", paste(extra, collapse = ", "), call. = FALSE)
+  }
+  key_counts <- json_item_key_counts(text, required)
+  duplicated_keys <- names(key_counts)[key_counts > 1L]
+  if (length(duplicated_keys) > 0) {
+    stop("Response contains duplicated item(s): ", paste(duplicated_keys, collapse = ", "), call. = FALSE)
   }
   allowed <- unlist(schema$allowed_decisions, use.names = FALSE)
   for (key in required) {

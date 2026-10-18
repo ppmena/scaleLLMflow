@@ -98,6 +98,14 @@ test_that("provenance contains stable hashes and execution metadata", {
   expect_equal(metadata$prompt_version, "v040")
   expect_equal(provenance$selected_prompt, "scale")
   expect_equal(provenance$prompt_version, "v040")
+  expect_true(nzchar(provenance$run_id))
+  expect_equal(provenance$validation_status, "pending")
+})
+
+test_that("article identifiers cannot silently collide in datasets", {
+  dir <- tempfile(); dir.create(dir)
+  file.create(file.path(dir, "study.pdf")); file.create(file.path(dir, "study.txt"))
+  expect_error(scaleLLMflow:::run_dataset(dir, output_dir = tempfile(), max_articles = 0), "collide")
 })
 
 test_that("prompt snapshots record prompt version and hash", {
