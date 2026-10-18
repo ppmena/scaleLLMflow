@@ -3,6 +3,11 @@ clean_article_id <- function(path) {
     stringr::str_replace_all(" ", "_")
 }
 
+new_run_id <- function() {
+  paste0(format(Sys.time(), "%Y%m%dT%H%M%OS3", tz = "UTC"), "Z-",
+    paste(sample(c(0:9, letters[1:6]), 12, replace = TRUE), collapse = ""))
+}
+
 # Return a stable SHA-256 digest for text. Hashes tie an audit result to the
 # exact inputs that produced it.
 sha256_text <- function(text) {
@@ -12,10 +17,12 @@ sha256_text <- function(text) {
 build_provenance <- function(article_path, article_text, prompt_text, full_prompt,
                              resolved, provider, model, temperature, top_p,
                              timeout, strip_references, max_retries,
-                             retry_wait_seconds, retry_backoff, rate_limit_seconds) {
+                              retry_wait_seconds, retry_backoff, rate_limit_seconds,
+                              run_id = new_run_id(), validation_status = "pending") {
   package_version <- tryCatch(as.character(utils::packageVersion("scaleLLMflow")),
     error = function(e) "development")
   list(
+    run_id = run_id,
     created_at_utc = format(Sys.time(), tz = "UTC", usetz = TRUE),
     package_version = package_version,
     r_version = as.character(getRversion()),
@@ -45,7 +52,8 @@ build_provenance <- function(article_path, article_text, prompt_text, full_promp
     max_retries = max_retries,
     retry_wait_seconds = retry_wait_seconds,
     retry_backoff = retry_backoff,
-    rate_limit_seconds = rate_limit_seconds
+    rate_limit_seconds = rate_limit_seconds,
+    validation_status = validation_status
   )
 }
 
@@ -233,6 +241,7 @@ run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini",
   # Validate before parsing so malformed model output fails loudly and is
   # recorded by run_dataset instead of producing incomplete scores.
   validate_scale_response(raw_response, resolved$metadata, items)
+  provenance$validation_status <- "valid"
 
   ordered_items <- if (!is.null(resolved$metadata$response_schema) &&
                        !identical(resolved$metadata$response_schema$type, "legacy_lines")) {
@@ -373,6 +382,12 @@ run_dataset <- function(articles_dir, scale = "mqs", provider = "gemini", model 
   write_prompt_snapshot(output_dir, prompt_text, resolved)
 
   article_paths <- list_article_files(articles_dir, filetype = filetype)
+  article_ids <- vapply(article_paths, clean_article_id, character(1))
+  if (anyDuplicated(article_ids)) {
+    duplicated_ids <- unique(article_ids[duplicated(article_ids)])
+    stop("Document identifiers collide after normalization: ",
+      paste(duplicated_ids, collapse = ", "), call. = FALSE)
+  }
   results_list <- list()
   evidence_list <- list()
   errors_list <- list()
