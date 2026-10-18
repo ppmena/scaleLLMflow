@@ -29,6 +29,9 @@ extract_article_text(
 
 \item{strip_references}{Whether to remove the reference section before sending text to an LLM.}
 
+\item{tables_advanced, cache_markdown}{Whether to structure text and cache PDF
+conversion output.}
+
 \item{conversion}{PDF conversion mode passed to \code{extract_pdf_text()}.}
 
 \item{provider, model, conversion_prompt, temperature}{LLM conversion settings.}
@@ -37,6 +40,8 @@ extract_article_text(
 
 \item{figures_advanced, figure_dpi, figure_page_batch_size}{Figure-aware LLM
 conversion settings passed to \code{extract_pdf_text()}.}
+
+\item{...}{Additional provider call settings.}
 }
 \description{
 Extract text from a supported article file.

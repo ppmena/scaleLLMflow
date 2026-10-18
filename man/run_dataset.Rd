@@ -53,6 +53,9 @@ run_dataset(
 
 \item{strip_references, items, temperature, top_p, timeout, api_key, project_id}{Provider and parsing settings.}
 
+\item{tables_advanced, cache_markdown}{Whether to structure text and cache PDF
+conversion output.}
+
 \item{conversion, conversion_provider, conversion_model, conversion_prompt}{PDF
 conversion settings. LLM conversion generally gives better results for
 multi-column articles and complex layouts.}
@@ -64,6 +67,8 @@ multi-column articles and complex layouts.}
 \item{max_retries, retry_wait_seconds, retry_backoff, rate_limit_seconds}{Reliability settings.}
 
 \item{reference_csv}{Optional reviewed-score CSV.}
+
+\item{reasoning_effort}{Optional provider reasoning setting.}
 
 \item{validation_mode}{Either \code{"free"} or \code{"reference"}.}
 }

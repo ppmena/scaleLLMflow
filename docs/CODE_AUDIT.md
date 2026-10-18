@@ -1,7 +1,10 @@
 # scaleLLMflow — auditoría de código
 
 Fecha de auditoría: 2026-10-18  
-Versión inspeccionada: 0.4.2
+Versión auditada inicialmente: 0.4.2
+
+La estabilización y documentación de 0.4.3 se registran en
+[`RELEASE_0.4.3_REPORT.md`](RELEASE_0.4.3_REPORT.md).
 
 ## Alcance y método
 

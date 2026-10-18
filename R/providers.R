@@ -80,7 +80,7 @@ chatgpt_plan_bridge_call <- function(command, payload = list(), timeout = 300) {
   )
   output <- output[nzchar(trimws(output))]
   if (!length(output)) stop("ChatGPT plan bridge returned no response.", call. = FALSE)
-  parsed <- tryCatch(jsonlite::fromJSON(tail(output, 1), simplifyVector = FALSE),
+  parsed <- tryCatch(jsonlite::fromJSON(utils::tail(output, 1), simplifyVector = FALSE),
     error = function(e) stop("Invalid response from ChatGPT plan bridge: ", paste(output, collapse = "\n"), call. = FALSE))
   if (isTRUE(parsed$error)) stop(as.character(parsed$message %||% "ChatGPT plan request failed."), call. = FALSE)
   parsed
@@ -212,7 +212,7 @@ build_gemini_json_schema <- function(response_schema) {
     type = "object",
     properties = list(items = list(
       type = "object",
-      properties = setNames(rep(list(item_schema), length(keys)), keys),
+      properties = stats::setNames(rep(list(item_schema), length(keys)), keys),
       required = as.list(keys),
       additionalProperties = FALSE
     )),

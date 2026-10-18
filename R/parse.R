@@ -28,7 +28,7 @@ rob2_decision_score <- function(decision) {
 parse_rob2_lines <- function(text, schema) {
   lines <- strsplit(gsub("\\r\\n?", "\\n", text), "\\n")[[1]]
   keys <- as.character(unlist(schema$required_item_keys, use.names = FALSE))
-  out <- setNames(vector("list", length(keys)), keys)
+  out <- stats::setNames(vector("list", length(keys)), keys)
   for (line in lines) {
     hit <- stringr::str_match(line, "^\\s*\\*\\s*Item\\s+([A-Za-z][A-Za-z0-9_]*)\\s*:\\s*(.*?)\\s*\\|\\s*Justification:\\s*(.*)$")
     if (is.na(hit[1, 2])) next
@@ -105,8 +105,8 @@ validate_scale_scores <- function(scores, items, metadata) {
 
 # Return evidence and reasons as a flat, review-friendly table. This keeps the
 # human-readable rationale separate from the raw provider response.
-extract_scale_evidence <- function(text, items, metadata) {
-  response <- validate_scale_response(text, metadata, items)
+extract_scale_evidence <- function(text, items, metadata, response = NULL) {
+  if (is.null(response)) response <- validate_scale_response(text, metadata, items)
   key_map <- metadata$response_schema$item_key_map
   rows <- lapply(items, function(item_number) {
     key <- as.character(item_number)
@@ -342,11 +342,16 @@ json_item_score <- function(item_number, response, metadata) {
 #' @param text LLM response text.
 #' @param items Numeric item ids to parse. Defaults to 1:10.
 #' @param metadata Optional resolved scale metadata.
+#' @param validated_response Optional response already returned by
+#'   `validate_scale_response()`. This avoids validating the same structured
+#'   response more than once in a workflow.
 #' @export
-parse_scale_scores <- function(text, items = 1:10, metadata = NULL) {
+parse_scale_scores <- function(text, items = 1:10, metadata = NULL,
+                               validated_response = NULL) {
   if (!is.null(metadata) && !is.null(metadata$response_schema) &&
       !identical(metadata$response_schema$type, "legacy_lines")) {
-    response <- validate_scale_response(text, metadata, items)
+    response <- validated_response
+    if (is.null(response)) response <- validate_scale_response(text, metadata, items)
     scores <- vapply(items, json_item_score, numeric(1), response = response, metadata = metadata)
     names(scores) <- paste0("Item_", items)
     return(scores)

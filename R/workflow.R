@@ -164,6 +164,7 @@ build_audit_log <- function(clean_id, provider, model, strip_references, call_lo
 #' @param write_evidence Whether to write the per-article evidence CSV. Dataset
 #' workflows set this to `FALSE` because they write one consolidated report.
 #' @param temperature,top_p,timeout,api_key,project_id Provider call settings.
+#' @param reasoning_effort Optional provider reasoning setting.
 #' @param pdf_path Backward-compatible alias for `article_path`.
 #' @param max_retries,retry_wait_seconds,retry_backoff,rate_limit_seconds Reliability settings.
 #' @param reference_scores Optional reviewed scores for reference validation.
@@ -234,18 +235,19 @@ run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini",
   provenance$response_characters <- nchar(raw_response)
   provenance$response_bytes <- nchar(raw_response, type = "bytes")
   provenance$response_sha256 <- sha256_text(raw_response)
-  evidence <- extract_scale_evidence(raw_response, items, resolved$metadata)
-  evidence$Score <- as.numeric(parse_scale_scores(raw_response, items = items, metadata = resolved$metadata))
-  evidence <- evidence[c("Item", "Score", "Decision", "Evidence", "Reason")]
-
   # Validate before parsing so malformed model output fails loudly and is
   # recorded by run_dataset instead of producing incomplete scores.
-  validate_scale_response(raw_response, resolved$metadata, items)
+  validated_response <- validate_scale_response(raw_response, resolved$metadata, items)
   provenance$validation_status <- "valid"
+  scores <- parse_scale_scores(raw_response, items = items, metadata = resolved$metadata,
+    validated_response = validated_response)
+  evidence <- extract_scale_evidence(raw_response, items, resolved$metadata,
+    response = validated_response)
+  evidence$Score <- as.numeric(scores)
+  evidence <- evidence[c("Item", "Score", "Decision", "Evidence", "Reason")]
 
   ordered_items <- if (!is.null(resolved$metadata$response_schema) &&
                        !identical(resolved$metadata$response_schema$type, "legacy_lines")) {
-    scores <- parse_scale_scores(raw_response, items = items, metadata = resolved$metadata)
     validate_scale_scores(scores, items, resolved$metadata)
     paste(vapply(items, function(i) paste0("* Item ", i, ": ", format_scale_score(scores[[paste0("Item_", i)]])), character(1)), collapse = "\n\n")
   } else {
@@ -256,7 +258,7 @@ run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini",
   validation <- NULL
   if (validation_mode == "reference") {
     if (is.null(reference_scores)) stop("reference_scores is required in reference mode.", call. = FALSE)
-    validation <- compare_reference_scores(parse_scale_scores(raw_response, items = items, metadata = resolved$metadata), reference_scores, items)
+    validation <- compare_reference_scores(scores, reference_scores, items)
     validation <- paste(utils::capture.output(print(validation, row.names = FALSE)), collapse = "\n")
   }
   clean_id <- clean_article_id(article_path)
@@ -293,15 +295,15 @@ run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini",
     provider = provider_alias(provider),
     model = model,
     resolved_prompt = resolved,
-    scores = parse_scale_scores(raw_response, items = items, metadata = resolved$metadata),
-    total_score = calculate_scale_total(parse_scale_scores(raw_response, items = items, metadata = resolved$metadata), resolved$metadata),
+    scores = scores,
+    total_score = calculate_scale_total(scores, resolved$metadata),
     score_definition = resolved$metadata$scale_definition$total,
     audit_log = audit_log,
     raw_response = raw_response,
     provenance = provenance,
     validation_mode = validation_mode,
     validation = if (is.null(validation)) NULL else compare_reference_scores(
-      parse_scale_scores(raw_response, items = items, metadata = resolved$metadata), reference_scores, items),
+      scores, reference_scores, items),
     evidence = evidence
   )
 }
@@ -318,11 +320,14 @@ run_article <- function(article_path = NULL, scale = "mqs", provider = "gemini",
 #' @param model Requested model.
 #' @param registry_dir Optional prompt registry root.
 #' @param strip_references,items,temperature,top_p,timeout,api_key,project_id Provider and parsing settings.
+#' @param tables_advanced,cache_markdown Whether to structure text and cache PDF
+#'   conversion output.
 #' @param conversion,conversion_provider,conversion_model,conversion_prompt PDF
 #'   conversion settings. LLM conversion generally gives better results for
 #'   multi-column articles and complex layouts.
 #' @param max_chars Maximum text size per LLM PDF-conversion call.
 #' @param max_retries,retry_wait_seconds,retry_backoff,rate_limit_seconds Reliability settings.
+#' @param reasoning_effort Optional provider reasoning setting.
 #' @param reference_csv Optional reviewed-score CSV.
 #' @param validation_mode Either `"free"` or `"reference"`.
 #' @param max_articles Maximum pending PDFs to process. `0` means all.
@@ -366,6 +371,17 @@ run_dataset <- function(articles_dir, scale = "mqs", provider = "gemini", model 
   if (max_articles < 0) {
     stop("max_articles must be 0 or higher.", call. = FALSE)
   }
+  resolved <- resolve_prompt(scale, model, provider = provider, registry_dir = registry_dir)
+  prompt_text <- paste(readLines(resolved$prompt_path, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
+
+  article_paths <- list_article_files(articles_dir, filetype = filetype)
+  article_ids <- vapply(article_paths, clean_article_id, character(1))
+  if (anyDuplicated(article_ids)) {
+    duplicated_ids <- unique(article_ids[duplicated(article_ids)])
+    stop("Document identifiers collide after normalization: ",
+      paste(duplicated_ids, collapse = ", "), call. = FALSE)
+  }
+
   if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
   run_stamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
   run_dir <- file.path(output_dir, paste0(tolower(scale), "_", run_stamp))
@@ -376,18 +392,7 @@ run_dataset <- function(articles_dir, scale = "mqs", provider = "gemini", model 
   }
   dir.create(run_dir, recursive = TRUE)
   output_dir <- run_dir
-
-  resolved <- resolve_prompt(scale, model, provider = provider, registry_dir = registry_dir)
-  prompt_text <- paste(readLines(resolved$prompt_path, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
   write_prompt_snapshot(output_dir, prompt_text, resolved)
-
-  article_paths <- list_article_files(articles_dir, filetype = filetype)
-  article_ids <- vapply(article_paths, clean_article_id, character(1))
-  if (anyDuplicated(article_ids)) {
-    duplicated_ids <- unique(article_ids[duplicated(article_ids)])
-    stop("Document identifiers collide after normalization: ",
-      paste(duplicated_ids, collapse = ", "), call. = FALSE)
-  }
   results_list <- list()
   evidence_list <- list()
   errors_list <- list()

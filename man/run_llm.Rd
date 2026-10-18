@@ -24,7 +24,8 @@ run_llm(
 \arguments{
 \item{prompt}{Prompt text to send.}
 
-\item{provider}{\code{"gemini"}, \code{"openai"}, \code{"chatgpt"}, \code{"claude"}, or \code{"anthropic"}.}
+\item{provider}{\code{"gemini"}, \code{"openai"}, \code{"chatgpt"}, \code{"claude"},
+\code{"anthropic"}, \code{"mistral"}, or \code{"ollama"}.}
 
 \item{model}{Model id.}
 
@@ -37,7 +38,8 @@ when \code{reasoning_effort = "none"}.}
 
 \item{api_key}{Optional in-memory API key.}
 
-\item{project_id}{Optional OpenAI project id.}
+\item{project_id}{Optional provider project id. If supplied, Gemini sends it
+as the Google quota/billing project and OpenAI sends it as the project header.}
 
 \item{max_retries}{Maximum retries for transient failures.}
 

@@ -25,6 +25,8 @@ convert_article_markdown_llm(
 
 \item{prompt}{Optional local conversion prompt.}
 
+\item{max_chars}{Maximum text size per conversion call.}
+
 \item{...}{Additional provider call settings.}
 }
 \description{

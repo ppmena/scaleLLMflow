@@ -75,6 +75,8 @@ are split and reassembled automatically.}
 
 \item{pdf_path}{Backward-compatible alias for \code{article_path}.}
 
+\item{reasoning_effort}{Optional provider reasoning setting.}
+
 \item{max_retries, retry_wait_seconds, retry_backoff, rate_limit_seconds}{Reliability settings.}
 
 \item{reference_scores}{Optional reviewed scores for reference validation.}

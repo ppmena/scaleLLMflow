@@ -2,7 +2,7 @@
 % Please edit documentation in R/audit.R
 \name{audit_model_registry}
 \alias{audit_model_registry}
-\title{Audit every registered scale and model prompt.}
+\title{Audit every registered scale prompt.}
 \usage{
 audit_model_registry(
   registry_dir = NULL,
@@ -22,5 +22,5 @@ backup directory. Defaults to \code{FALSE}.}
 A list with checks, duplicate_groups, unification_plan, and backup_dir.
 }
 \description{
-Audit every registered scale and model prompt.
+Audit every registered scale prompt.
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/registry.R
 \name{resolve_prompt}
 \alias{resolve_prompt}
-\title{Resolve the best prompt registered for a scale and requested model.}
+\title{Resolve the accepted prompt registered for a scale.}
 \usage{
 resolve_prompt(scale, model, provider = NULL, registry_dir = NULL)
 }
@@ -11,17 +11,16 @@ resolve_prompt(scale, model, provider = NULL, registry_dir = NULL)
 
 \item{model}{Requested model name.}
 
-\item{provider}{Optional provider used only for the API call. It does not
-select a prompt.}
+\item{provider}{Optional provider retained for API compatibility. It does not
+select the official scale prompt.}
 
 \item{registry_dir}{Optional registry root. Defaults to bundled package prompts.}
 }
 \value{
-A list containing prompt path, model folder, match strategy, and metadata.
+A list containing prompt path, prompt version, match strategy, and metadata.
 }
 \description{
-Resolution order is exact model, same model family token, same numeric version,
-The accepted prompt is always the scale-level prompt in
-\code{scales/<scale>/prompt.md}, with its metadata in the sibling
-\code{metadata.json}. No model- or provider-specific fallback is used.
+The official registry is scale-level: \verb{scales/<scale>/prompt.md} and
+\code{metadata.json}. Model and provider are execution parameters, not prompt
+selection parameters. No model/provider-specific prompt fallback is used.
 }
