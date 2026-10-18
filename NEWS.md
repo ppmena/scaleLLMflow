@@ -1,3 +1,19 @@
+# scaleLLMflow (unreleased)
+
+## Auditoría y robustez
+
+- Corregido el ejemplo de descubrimiento de modelos del README.
+- La validación estructurada rechaza ítems no definidos y claves de ítems
+  duplicadas.
+- `run_dataset()` detecta colisiones de identificadores antes de procesar
+  documentos.
+- La extracción PDF falla explícitamente ante errores o texto vacío y la caché
+  Markdown se escribe mediante un archivo temporal.
+- La trazabilidad incorpora `run_id` y `validation_status`.
+- El texto del artículo se marca como material no confiable al construir el
+  prompt.
+- Añadido `docs/CODE_AUDIT.md` y workflow de GitHub Actions para `R CMD check`.
+
 # scaleLLMflow 0.4.2
 
 ## Provider rate-limit handling

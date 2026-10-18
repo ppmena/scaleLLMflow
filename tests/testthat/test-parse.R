@@ -79,3 +79,21 @@ test_that("JSON with a terminal closing fence is normalized safely", {
   text <- paste0(jsonlite::toJSON(response, auto_unbox = TRUE), "```")
   expect_equal(unname(parse_scale_scores(text, 1:10, metadata)), rep(1, 10))
 })
+
+test_that("structured validation rejects extra and duplicated items", {
+  metadata <- scaleLLMflow:::read_prompt_metadata(
+    system.file("scales/mqs", package = "scaleLLMflow")
+  )
+  item <- function(decision = "1.0") list(decision = decision, evidence = "evidence", reason = "reason")
+  response <- list(items = setNames(lapply(seq_len(10), function(i) item()), as.character(seq_len(10))))
+  response$items$extra <- item()
+  extra_text <- jsonlite::toJSON(response, auto_unbox = TRUE)
+  expect_error(parse_scale_scores(extra_text, 1:10, metadata), "undefined item")
+
+  duplicated_text <- paste0(
+    '{"items":{"1":{"decision":"1.0","evidence":"a","reason":"a"},',
+    '"1":{"decision":"1.0","evidence":"b","reason":"b"},',
+    paste(sprintf('"%s":{"decision":"1.0","evidence":"e","reason":"r"}', 2:10), collapse = ","), '}}'
+  )
+  expect_error(parse_scale_scores(duplicated_text, 1:10, metadata), "duplicated item")
+})
